@@ -1,14 +1,23 @@
+
+rootOut = build
+linuxOut = $(rootOut)/server_linux
+winOut = $(rootOut)/server_win.exe
+
 compile:
-	go build -o build/server
+	go build -o $(linuxOut)
 
 listen: compile
-	./build/server listen
+	./$(linuxOut) listen
 
 help: compile
-	./build/server -h
+	./$(linuxOut) -h
 
 dial: compile
-	./build/server dial
+	./$(linuxOut) dial
 
-windows:
-	GOOS=windows go build -o build/server.exe
+all:
+	GOOS=windows go build -o $(winOut)
+	GOOS=linux go build -o $(linuxOut)
+
+clean:
+	rm -rvf $(rootOut)
