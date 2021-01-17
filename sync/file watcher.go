@@ -89,7 +89,7 @@ func (fw *FileWatcher) handleFileCreated(e fsnotify.Event) {
 	if !fileInfo.IsDir() && e.Op&fsnotify.Create == fsnotify.Create {
 		time.Sleep(1 * time.Second)
 
-		file, err := GetFile(e.Name)
+		file, err := GetFileInfo(e.Name)
 		if err != nil {
 			log.Printf("Error retreiving file: %v", err)
 			return

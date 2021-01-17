@@ -51,7 +51,11 @@ func (s *Server) Listen() error {
 
 func (s *Server) sendFile(conn *websocket.Conn, file *sync.File) error {
 	// log.Printf("Sending file to client: %s", file.Path)
-	return conn.WriteJSON(file)
+	jsonData, err := file.ToJson()
+	if err != nil {
+		return err
+	}
+	return conn.WriteMessage(websocket.TextMessage, jsonData)
 }
 
 func (s *Server) writeToClient(conn *websocket.Conn) {
