@@ -9,3 +9,6 @@ help: compile
 
 dial: compile
 	./build/server dial
+
+windows:
+	GOOS=windows go build -o build/server.exe
