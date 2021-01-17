@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"fmt"
+	"os"
 	"os/user"
 	"path"
 
@@ -67,6 +69,14 @@ func InitApp() *cli.App {
 			},
 			Action: func(c *cli.Context) error {
 				cfg := &Configuration
+				_, err := os.Stat(cfg.ServerOptions.RootFolder)
+				if err != nil {
+					if os.IsNotExist(err) {
+						return fmt.Errorf("Folder \"%s\" does not exist", cfg.ServerOptions.RootFolder)
+					}
+					return err
+				}
+
 				s := server.NewServer(cfg.ServerOptions.RootFolder, cfg.ServerOptions.Recursive, cfg.Port)
 
 				return s.Listen()
