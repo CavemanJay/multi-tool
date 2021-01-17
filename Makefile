@@ -1,5 +1,11 @@
 compile:
-	go build -o server
+	go build -o build/server
 
-run:
-	go run main.go
+listen: compile
+	./build/server listen
+
+help: compile
+	./build/server -h
+
+dial: compile
+	./build/server dial

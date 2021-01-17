@@ -14,13 +14,12 @@ type FileWatcher struct {
 	Root        string
 	Recursive   bool
 	FileCreated func(file *File) error
+	watcher     *fsnotify.Watcher
 }
-
-var watcher *fsnotify.Watcher
 
 func (fw *FileWatcher) Watch(cancel <-chan struct{}) error {
 	var err error
-	watcher, err = fsnotify.NewWatcher()
+	fw.watcher, err = fsnotify.NewWatcher()
 	if err != nil {
 		return err
 	}
@@ -34,11 +33,11 @@ func (fw *FileWatcher) Watch(cancel <-chan struct{}) error {
 	go func() {
 		for {
 			select {
-			case event := <-watcher.Events:
+			case event := <-fw.watcher.Events:
 				// watch for events
 				fw.handleFileCreated(event)
 
-			case err := <-watcher.Errors:
+			case err := <-fw.watcher.Errors:
 				// watch for errors
 				fmt.Println("ERROR", err)
 			}
@@ -53,11 +52,11 @@ func (fw *FileWatcher) Watch(cancel <-chan struct{}) error {
 func (fw *FileWatcher) setupWatches() error {
 	// Walk the directory tree if we are in recursive mode
 	if fw.Recursive {
-		if err := filepath.Walk(fw.Root, watchDir); err != nil {
+		if err := filepath.Walk(fw.Root, fw.watchDir); err != nil {
 			return err
 		}
 	} else {
-		if err := watcher.Add(fw.Root); err != nil {
+		if err := fw.watcher.Add(fw.Root); err != nil {
 			return err
 		}
 	}
@@ -65,11 +64,11 @@ func (fw *FileWatcher) setupWatches() error {
 	return nil
 }
 
-func watchDir(path string, fi os.FileInfo, err error) error {
+func (fw *FileWatcher) watchDir(path string, fi os.FileInfo, err error) error {
 	// since fsnotify can watch all the files in a directory, watchers only need
 	// to be added to each nested directory
 	if fi.Mode().IsDir() {
-		return watcher.Add(path)
+		return fw.watcher.Add(path)
 	}
 
 	return nil
