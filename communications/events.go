@@ -1,6 +1,6 @@
 package communications
 
-import "github.com/JayCuevas/jays-server/sync"
+import "github.com/JayCuevas/gogurt/sync"
 
 type eventId int
 

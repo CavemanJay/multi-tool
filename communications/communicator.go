@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/JayCuevas/jays-server/sync"
+	"github.com/JayCuevas/gogurt/sync"
 	"github.com/gorilla/websocket"
 )
 
