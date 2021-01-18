@@ -9,13 +9,16 @@ compile:
 listen: compile
 	./$(linuxOut) listen
 
+wsl: compile
+	./$(linuxOut) listen -f "/mnt/c/Users/cueva/Sync/"
+
 help: compile
 	./$(linuxOut) -h
 
 dial: compile
 	./$(linuxOut) dial
 
-all:
+all: 
 	GOOS=windows go build -o $(winOut)
 	GOOS=linux go build -o $(linuxOut)
 
