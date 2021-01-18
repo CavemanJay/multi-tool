@@ -1,7 +1,7 @@
 
 rootOut = build
-linuxOut = $(rootOut)/server_linux
-winOut = $(rootOut)/server_win.exe
+linuxOut = $(rootOut)/gogurt
+winOut = $(rootOut)/gogurt.exe
 
 compile:
 	go build -o $(linuxOut)
@@ -18,6 +18,11 @@ dial: compile
 all:
 	GOOS=windows go build -o $(winOut)
 	GOOS=linux go build -o $(linuxOut)
+
+xgo:
+	mkdir -p build
+	cd build && \
+	xgo -v -x --targets=windows/*,linux/amd64,linux/386 github.com/JayCuevas/gogurt
 
 clean:
 	rm -rvf $(rootOut)
