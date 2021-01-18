@@ -6,6 +6,8 @@ import (
 	"os/user"
 	"path"
 
+	"github.com/JayCuevas/jays-server/client"
+
 	"github.com/JayCuevas/jays-server/server"
 
 	"github.com/urfave/cli/v2"
@@ -115,10 +117,16 @@ func InitApp() *cli.App {
 				},
 				&cli.StringFlag{
 					Name:        "host",
-					Aliases:     []string{"h"},
 					Usage:       "The `HOST` to connect to",
 					Destination: &Configuration.ClientOptions.Host,
+					Value:       "localhost",
 				},
+			},
+			Action: func(ctx *cli.Context) error {
+				cfg := &Configuration
+				c := client.Client{}
+
+				return c.Connect(cfg.ClientOptions.Host, cfg.Port)
 			},
 		},
 	}
