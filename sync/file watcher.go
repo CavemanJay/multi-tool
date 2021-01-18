@@ -11,42 +11,72 @@ import (
 )
 
 type FileWatcher struct {
-	Root        string
-	Recursive   bool
-	FileCreated func(file *File) error
-	watcher     *fsnotify.Watcher
+	Root         string
+	Recursive    bool
+	FileCreated  func(file *File) error
+	FilesDeleted func(files []string) error
+	Files        *[]*File
+	watcher      *fsnotify.Watcher
 }
 
-func (fw *FileWatcher) Watch(cancel <-chan struct{}) error {
+func (fw *FileWatcher) Watch(exit <-chan struct{}) error {
 	var err error
 	fw.watcher, err = fsnotify.NewWatcher()
 	if err != nil {
 		return err
 	}
 
-	// defer watcher.Close()
+	defer fw.watcher.Close()
 
 	err = fw.setupWatches()
+	if err != nil {
+		return err
+	}
 
-	// done := make(chan bool, 1)
+	go fw.listenForFsEvents()
+	go fw.checkForDeletedFiles()
 
-	go func() {
-		for {
-			select {
-			case event := <-fw.watcher.Events:
-				// watch for events
-				fw.handleFileCreated(event)
-
-			case err := <-fw.watcher.Errors:
-				// watch for errors
-				fmt.Println("ERROR", err)
-			}
-		}
-	}()
-
-	<-cancel
+	<-exit
 
 	return nil
+}
+
+func findDeletedFiles(files []*File) []string {
+	deleted := []string{}
+
+	for _, f := range files {
+		if _, err := os.Stat(f.Path); os.IsNotExist(err) {
+			deleted = append(deleted, f.Path)
+		}
+	}
+
+	return deleted
+}
+
+func (fw *FileWatcher) checkForDeletedFiles() {
+	ticker := time.NewTicker(5 * time.Second)
+	for {
+		<-ticker.C
+
+		deleted := findDeletedFiles(*fw.Files)
+		if len(deleted) > 0 {
+			fw.FilesDeleted(deleted)
+		}
+	}
+}
+
+func (fw *FileWatcher) listenForFsEvents() {
+	for {
+		select {
+		case event := <-fw.watcher.Events:
+			// watch for events
+			fw.handleEvents(event)
+
+		case err := <-fw.watcher.Errors:
+			// watch for errors
+			fmt.Printf("Watcher error: %#v", err)
+		}
+	}
 }
 
 func (fw *FileWatcher) setupWatches() error {
@@ -74,7 +104,7 @@ func (fw *FileWatcher) watchDir(path string, fi os.FileInfo, err error) error {
 	return nil
 }
 
-func (fw *FileWatcher) handleFileCreated(e fsnotify.Event) {
+func (fw *FileWatcher) handleEvents(e fsnotify.Event) {
 	fileInfo, err := os.Stat(e.Name)
 
 	// if the file does not exist
@@ -86,15 +116,51 @@ func (fw *FileWatcher) handleFileCreated(e fsnotify.Event) {
 		panic(err)
 	}
 
-	if !fileInfo.IsDir() && e.Op&fsnotify.Create == fsnotify.Create {
-		time.Sleep(1 * time.Second)
+	// We only care about files
+	if fileInfo.IsDir() {
+		return
+	}
 
-		file, err := GetFileInfo(e.Name)
-		if err != nil {
-			log.Printf("Error retreiving file: %v", err)
-			return
+	if e.Op&fsnotify.Create == fsnotify.Create {
+		fw.handleFileCreated(e)
+		return
+	}
+}
+
+func (fw *FileWatcher) handleFileCreated(e fsnotify.Event) {
+	time.Sleep(1 * time.Second)
+
+	file, err := GetFileInfo(e.Name)
+	if err != nil {
+		log.Printf("Error retreiving file: %v", err)
+		return
+	}
+
+	fw.FileCreated(file)
+}
+
+func (fw FileWatcher) IndexFiles(fileFound func(file *File)) error {
+	// files := []*File{}
+
+	err := filepath.Walk(fw.Root, func(path string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			return nil
 		}
 
-		fw.FileCreated(file)
+		file, err := GetFileInfo(path)
+		if err != nil {
+			return err
+		}
+		// files = append(files, file)
+		fileFound(file)
+
+		return nil
+	})
+
+	if err != nil {
+		return err
 	}
+
+	// return files, nil
+	return nil
 }
