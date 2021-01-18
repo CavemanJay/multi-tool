@@ -130,7 +130,7 @@ func (fw *FileWatcher) handleEvents(e fsnotify.Event) {
 func (fw *FileWatcher) handleFileCreated(e fsnotify.Event) {
 	time.Sleep(1 * time.Second)
 
-	file, err := GetFileInfo(e.Name)
+	file, err := GetFileInfo(fw.Root, e.Name)
 	if err != nil {
 		log.Printf("Error retreiving file: %v", err)
 		return
@@ -147,7 +147,7 @@ func (fw FileWatcher) IndexFiles(fileFound func(file *File)) error {
 			return nil
 		}
 
-		file, err := GetFileInfo(path)
+		file, err := GetFileInfo(fw.Root, path)
 		if err != nil {
 			return err
 		}

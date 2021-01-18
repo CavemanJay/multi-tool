@@ -9,6 +9,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 type file struct {
@@ -98,7 +100,19 @@ func getBase64FileData(path string) (string, error) {
 	return base64.StdEncoding.EncodeToString(data), nil
 }
 
-func GetFileInfo(path string) (*File, error) {
+func getFilePathRelativeToRoot(root string, fullPath string) string {
+	root, _ = filepath.Abs(root)
+	fullPath, _ = filepath.Abs(fullPath)
+
+	path := strings.ReplaceAll(fullPath, root, "")
+	if path[0] == '/' {
+		path = path[1:len(path)]
+	}
+
+	return path
+}
+
+func GetFileInfo(syncRoot string, path string) (*File, error) {
 	hash, err := hashFile(path)
 
 	if err != nil {
@@ -108,6 +122,6 @@ func GetFileInfo(path string) (*File, error) {
 
 	return &File{
 		Hash: hash,
-		Path: path,
+		Path: getFilePathRelativeToRoot(syncRoot, path),
 	}, nil
 }
