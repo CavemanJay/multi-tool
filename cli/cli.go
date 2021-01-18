@@ -28,16 +28,35 @@ type Config struct {
 
 var Configuration = Config{}
 
+func getDbPath() string {
+	dbPath, err := os.UserCacheDir()
+	if err != nil {
+		panic(err)
+	}
+
+	return path.Join(dbPath, "Jays Server", "data.db")
+}
+
 func InitApp() *cli.App {
 	app := cli.NewApp()
 	app.Name = "Jay's Server"
 	app.Usage = "Handles functions I commonly need to do"
 	app.UseShortOptionHandling = true
 	app.EnableBashCompletion = true
+	app.Version = "v0.1.0"
 
 	u, err := user.Current()
 	if err != nil {
 		panic(err)
+	}
+
+	app.Flags = []cli.Flag{
+		&cli.PathFlag{
+			Name:    "database",
+			Aliases: []string{"db"},
+			Usage:   "`PATH` to database file",
+			Value:   getDbPath(),
+		},
 	}
 
 	app.Commands = []*cli.Command{
