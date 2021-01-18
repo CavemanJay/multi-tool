@@ -13,9 +13,9 @@ import (
 type FileWatcher struct {
 	Root         string
 	Recursive    bool
-	FileCreated  func(file *File) error
+	FileCreated  func(file File) error
 	FilesDeleted func(files []string) error
-	Files        *[]*File
+	Files        *[]File
 	watcher      *fsnotify.Watcher
 }
 
@@ -41,7 +41,7 @@ func (fw *FileWatcher) Watch(exit <-chan struct{}) error {
 	return nil
 }
 
-func findDeletedFiles(files []*File) []string {
+func findDeletedFiles(files []File) []string {
 	deleted := []string{}
 
 	for _, f := range files {
@@ -136,10 +136,10 @@ func (fw *FileWatcher) handleFileCreated(e fsnotify.Event) {
 		return
 	}
 
-	fw.FileCreated(file)
+	fw.FileCreated(*file)
 }
 
-func (fw FileWatcher) IndexFiles(fileFound func(file *File)) error {
+func (fw FileWatcher) IndexFiles(fileFound func(file File)) error {
 	// files := []*File{}
 
 	err := filepath.Walk(fw.Root, func(path string, info os.FileInfo, err error) error {
@@ -152,7 +152,7 @@ func (fw FileWatcher) IndexFiles(fileFound func(file *File)) error {
 			return err
 		}
 		// files = append(files, file)
-		fileFound(file)
+		fileFound(*file)
 
 		return nil
 	})

@@ -90,7 +90,6 @@ func readFile(path string) ([]byte, error) {
 }
 
 func getBase64FileData(path string) (string, error) {
-
 	data, err := readFile(path)
 
 	if err != nil {
@@ -105,6 +104,7 @@ func getFilePathRelativeToRoot(root string, fullPath string) string {
 	fullPath, _ = filepath.Abs(fullPath)
 
 	path := strings.ReplaceAll(fullPath, root, "")
+	path = strings.ReplaceAll(path, "\\", "/")
 	if path[0] == '/' {
 		path = path[1:len(path)]
 	}

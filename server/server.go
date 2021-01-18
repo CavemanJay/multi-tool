@@ -5,34 +5,40 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 
-	"github.com/JayCuevas/gogurt/sync"
+	comms "github.com/JayCuevas/gogurt/communications"
+	filesync "github.com/JayCuevas/gogurt/sync"
 	"github.com/gorilla/websocket"
 )
 
+var lock sync.Mutex
+
 type Server struct {
-	fileCreated chan *sync.File
-	upgrader    websocket.Upgrader
-	filesList   []*sync.File
-	Port        int
-	fileWatcher sync.FileWatcher
-	clientCount int
+	fileCreated  chan filesync.File
+	upgrader     websocket.Upgrader
+	filesList    []filesync.File
+	Port         int
+	fileWatcher  filesync.FileWatcher
+	clientCount  int
+	communicator *comms.Communicator
 }
 
 func NewServer(rootFolder string, recursive bool, port int) *Server {
 	server := &Server{
-		fileCreated: make(chan *sync.File),
+		fileCreated: make(chan filesync.File),
 		Port:        port,
-		filesList:   []*sync.File{},
+		filesList:   []filesync.File{},
 		clientCount: 0,
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
 			CheckOrigin:     func(r *http.Request) bool { return true },
 		},
+		communicator: comms.NewCommunicator(nil),
 	}
 
-	server.fileWatcher = sync.FileWatcher{
+	server.fileWatcher = filesync.FileWatcher{
 		Root:         rootFolder,
 		Recursive:    recursive,
 		FileCreated:  server.fileCreatedHandler,
@@ -43,10 +49,15 @@ func NewServer(rootFolder string, recursive bool, port int) *Server {
 	return server
 }
 
+func (s *Server) addFile(file filesync.File) {
+	lock.Lock()
+	s.filesList = append(s.filesList, file)
+	lock.Unlock()
+	log.Println(len(s.filesList))
+}
+
 func (s *Server) Listen() error {
 	exit := make(chan struct{}, 1)
-	// termChan := make(chan os.Signal)
-	// signal.Notify(termChan, syscall.SIGTERM, syscall.SIGINT)
 
 	http.HandleFunc("/ws", s.socketEndpoint())
 	http.HandleFunc("/files", s.filesEndpoint())
@@ -55,60 +66,22 @@ func (s *Server) Listen() error {
 	log.Printf("Server listening on :%d", s.Port)
 
 	go func() {
-		err := s.fileWatcher.IndexFiles(func(file *sync.File) {
-			s.filesList = append(s.filesList, file)
-		})
+		err := s.fileWatcher.IndexFiles(s.addFile)
 
 		if err != nil {
 			log.Printf("Error indexing files: %v", err)
 			return
 		}
 	}()
-	// go func() {
-	// 	<-termChan
-
-	// }()
 	go s.fileWatcher.Watch(exit)
 	return http.ListenAndServe(fmt.Sprintf(":%d", s.Port), nil)
-}
-
-func (s *Server) sendFile(conn *websocket.Conn, file *sync.File) error {
-	// log.Printf("Sending file to client: %s", file.Path)
-	jsonData, err := file.ToJson()
-	if err != nil {
-		return err
-	}
-	return conn.WriteMessage(websocket.TextMessage, jsonData)
-}
-
-func (s *Server) writeToClient(conn *websocket.Conn) {
-	// Send files that have been added before the client connected
-	// for _, file := range s.filesList {
-	// 	s.sendFile(conn, file)
-	// }
-
-	var file *sync.File
-	for {
-		file = <-s.fileCreated
-		s.sendFile(conn, file)
-	}
-}
-
-func (s *Server) listenToClient(conn *websocket.Conn) {
-	for {
-		_, p, err := conn.ReadMessage()
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		log.Println(string(p))
-	}
 }
 
 func (s *Server) filesEndpoint() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(s.filesList)
+		log.Println(len(s.filesList))
 	}
 }
 
@@ -130,12 +103,11 @@ func (s *Server) socketEndpoint() http.HandlerFunc {
 		s.clientCount++
 		log.Printf("Client connected: %s", ws.RemoteAddr().String())
 
-		go s.writeToClient(ws)
-		s.listenToClient(ws)
+		s.communicator.HandleComms(ws)
 	}
 }
 
-func (s *Server) fileCreatedHandler(file *sync.File) error {
+func (s *Server) fileCreatedHandler(file filesync.File) error {
 	// Iterate over the files and see if the file has already been handled
 	for i, f := range s.filesList {
 		if f.Path == file.Path {
@@ -145,11 +117,13 @@ func (s *Server) fileCreatedHandler(file *sync.File) error {
 			}
 
 			// The hashes are different, update the existing copy in memory
+			lock.Lock()
 			s.filesList[i] = file
+			lock.Unlock()
 		}
 	}
 
-	s.filesList = append(s.filesList, file)
+	s.addFile(file)
 
 	if s.clientCount > 0 {
 		// This will block if there are no clients connected
@@ -162,19 +136,22 @@ func (s *Server) fileCreatedHandler(file *sync.File) error {
 	return nil
 }
 
-func removeFile(files []*sync.File, i int) []*sync.File {
+func removeFile(files []*filesync.File, i int) []*filesync.File {
+	lock.Lock()
+	defer lock.Unlock()
+
 	files[i] = files[len(files)-1]
 	return files[:len(files)-1]
 }
 
 func (s *Server) filesDeletedHandler(paths []string) error {
-	for _, path := range paths {
-		for i, file := range s.filesList {
-			if path == file.Path {
-				s.filesList = removeFile(s.filesList, i)
-			}
-		}
-	}
+	// for _, path := range paths {
+	// 	for i, file := range s.filesList {
+	// 		if path == file.Path {
+	// 			s.filesList = removeFile(s.filesList, i)
+	// 		}
+	// 	}
+	// }
 
 	return nil
 }
