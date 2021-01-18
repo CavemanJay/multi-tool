@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sync"
 
+	comms "github.com/JayCuevas/jays-server/communications"
 	filesync "github.com/JayCuevas/jays-server/sync"
 	"github.com/gorilla/websocket"
 )
@@ -14,12 +15,13 @@ import (
 var lock sync.Mutex
 
 type Server struct {
-	fileCreated chan filesync.File
-	upgrader    websocket.Upgrader
-	filesList   []filesync.File
-	Port        int
-	fileWatcher filesync.FileWatcher
-	clientCount int
+	fileCreated  chan filesync.File
+	upgrader     websocket.Upgrader
+	filesList    []filesync.File
+	Port         int
+	fileWatcher  filesync.FileWatcher
+	clientCount  int
+	communicator *comms.Communicator
 }
 
 func NewServer(rootFolder string, recursive bool, port int) *Server {
@@ -33,6 +35,7 @@ func NewServer(rootFolder string, recursive bool, port int) *Server {
 			WriteBufferSize: 1024,
 			CheckOrigin:     func(r *http.Request) bool { return true },
 		},
+		communicator: comms.NewCommunicator(nil),
 	}
 
 	server.fileWatcher = filesync.FileWatcher{
@@ -55,8 +58,6 @@ func (s *Server) addFile(file filesync.File) {
 
 func (s *Server) Listen() error {
 	exit := make(chan struct{}, 1)
-	// termChan := make(chan os.Signal)
-	// signal.Notify(termChan, syscall.SIGTERM, syscall.SIGINT)
 
 	http.HandleFunc("/ws", s.socketEndpoint())
 	http.HandleFunc("/files", s.filesEndpoint())
@@ -72,46 +73,8 @@ func (s *Server) Listen() error {
 			return
 		}
 	}()
-	// go func() {
-	// 	<-termChan
-
-	// }()
 	go s.fileWatcher.Watch(exit)
 	return http.ListenAndServe(fmt.Sprintf(":%d", s.Port), nil)
-}
-
-func (s *Server) sendFile(conn *websocket.Conn, file filesync.File) error {
-	// log.Printf("Sending file to client: %s", file.Path)
-	jsonData, err := file.ToJson()
-	if err != nil {
-		return err
-	}
-	return conn.WriteMessage(websocket.TextMessage, jsonData)
-}
-
-func (s *Server) writeToClient(conn *websocket.Conn) {
-	// Send files that have been added before the client connected
-	// for _, file := range s.filesList {
-	// 	s.sendFile(conn, file)
-	// }
-
-	var file filesync.File
-	for {
-		file = <-s.fileCreated
-		s.sendFile(conn, file)
-	}
-}
-
-func (s *Server) listenToClient(conn *websocket.Conn) {
-	for {
-		_, p, err := conn.ReadMessage()
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		log.Println(string(p))
-		conn.WriteMessage(websocket.TextMessage, p)
-	}
 }
 
 func (s *Server) filesEndpoint() http.HandlerFunc {
@@ -140,8 +103,7 @@ func (s *Server) socketEndpoint() http.HandlerFunc {
 		s.clientCount++
 		log.Printf("Client connected: %s", ws.RemoteAddr().String())
 
-		go s.writeToClient(ws)
-		s.listenToClient(ws)
+		s.communicator.HandleComms(ws)
 	}
 }
 
