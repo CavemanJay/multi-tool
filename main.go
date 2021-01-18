@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/JayCuevas/jays-server/cli"
+	"github.com/JayCuevas/gogurt/cli"
 )
 
 func main() {

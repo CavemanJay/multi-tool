@@ -1,4 +1,4 @@
-module github.com/JayCuevas/jays-server
+module github.com/JayCuevas/gogurt
 
 go 1.15
 

@@ -6,7 +6,7 @@ import (
 	"os/user"
 	"path"
 
-	"github.com/JayCuevas/jays-server/server"
+	"github.com/JayCuevas/gogurt/server"
 
 	"github.com/urfave/cli/v2"
 )
