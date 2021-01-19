@@ -2,12 +2,15 @@ package cli
 
 import (
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"os/user"
 	"path"
 
 	"github.com/JayCuevas/gogurt/client"
 	"github.com/JayCuevas/gogurt/server"
+	"github.com/op/go-logging"
 
 	"github.com/urfave/cli/v2"
 )
@@ -25,22 +28,49 @@ type Config struct {
 	Port          int
 	ServerOptions ServerOptions
 	ClientOptions ClientOptions
+	AppDataFolder string
 }
 
 var Configuration = Config{}
 
-func getDbPath() string {
-	dbPath, err := os.UserCacheDir()
+func getAppDataPath() string {
+	appData, err := os.UserCacheDir()
 	if err != nil {
 		panic(err)
 	}
 
-	return path.Join(dbPath, "Jays Server", "data.db")
+	return path.Join(appData, "gogurt")
+}
+
+func initLogger(file io.Writer) {
+
+	logFile := logging.AddModuleLevel(logging.NewLogBackend(file, "", log.Lshortfile|log.Ldate|log.Ltime))
+	logFile.SetLevel(logging.INFO, "gogurt")
+
+	format := logging.MustStringFormatter(`%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:.4s} %{id:03d}%{color:reset} %{message}`)
+	// format := logging.MustStringFormatter(`%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:.4s} %{id:03x}%{color:reset} %{message}`)
+	// format := logging.MustStringFormatter(`%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:-5s} %{id:03x}%{color:reset} %{message}`)
+
+	// format := logging.MustStringFormatter(`%{color}%{time:15:04:05.000} %{callpath} ▶ %{level:2.5s} %{id:03x}%{color:reset} %{message}`)
+
+	stdOutBackend := logging.NewLogBackend(os.Stdin, "", 0)
+	stdOut := logging.AddModuleLevel(logging.NewBackendFormatter(stdOutBackend, format))
+	stdOut.SetLevel(logging.DEBUG, "gogurt")
+
+	// If we are in a tty
+	// if fileInfo, _ := os.Stdout.Stat(); (fileInfo.Mode() & os.ModeCharDevice) != 0 {
+	// } else {
+	// 	stdErr := logging.AddModuleLevel(logging.NewLogBackend(os.Stderr, "", 0))
+	// 	stdErr.SetLevel(logging.ERROR, "ERROR")
+	// 	logging.SetBackend(stdErr, logFile, stdOut)
+	// }
+
+	logging.SetBackend(logFile, stdOut)
 }
 
 func InitApp() *cli.App {
 	app := cli.NewApp()
-	app.Name = "Jay's Server"
+	app.Name = "Gogurt"
 	app.Usage = "Handles functions I commonly need to do"
 	app.UseShortOptionHandling = true
 	app.EnableBashCompletion = true
@@ -53,10 +83,10 @@ func InitApp() *cli.App {
 
 	app.Flags = []cli.Flag{
 		&cli.PathFlag{
-			Name:    "database",
-			Aliases: []string{"db"},
-			Usage:   "`PATH` to database file",
-			Value:   getDbPath(),
+			Name:        "appdata",
+			Usage:       "`PATH` to the folder where app data is stored",
+			Value:       getAppDataPath(),
+			Destination: &Configuration.AppDataFolder,
 		},
 	}
 
@@ -83,7 +113,7 @@ func InitApp() *cli.App {
 					Name:        "folder",
 					Aliases:     []string{"f"},
 					Usage:       "The root `FOLDER` to synchronize",
-					Value:       path.Join(u.HomeDir, "Sync"),
+					Value:       path.Join(u.HomeDir, "Sync", "Backgrounds"),
 					Destination: &Configuration.ServerOptions.RootFolder,
 				},
 			},
@@ -96,6 +126,15 @@ func InitApp() *cli.App {
 					}
 					return err
 				}
+
+				os.Mkdir(cfg.AppDataFolder, os.ModePerm)
+
+				logFile, err := os.OpenFile(path.Join(cfg.AppDataFolder, "gogurt.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+				if err != nil {
+					return err
+				}
+				defer logFile.Close()
+				initLogger(logFile)
 
 				s := server.NewServer(cfg.ServerOptions.RootFolder, cfg.ServerOptions.Recursive, cfg.Port)
 

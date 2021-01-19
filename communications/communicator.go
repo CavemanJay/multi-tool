@@ -2,11 +2,14 @@ package communications
 
 import (
 	"fmt"
-	"log"
+	"strings"
 
 	"github.com/JayCuevas/gogurt/sync"
 	"github.com/gorilla/websocket"
+	"github.com/op/go-logging"
 )
+
+var log = logging.MustGetLogger("gogurt")
 
 type Communicator struct {
 	conn         *websocket.Conn
@@ -20,6 +23,10 @@ func NewCommunicator(socket *websocket.Conn) *Communicator {
 		FileCreated:  make(chan sync.File),
 		FilesDeleted: make(chan []string),
 	}
+}
+
+func isDisconnect(err error) bool {
+	return strings.Contains(err.Error(), "closure")
 }
 
 func (c *Communicator) sendNewFileMessage(file *sync.File) error {
@@ -40,7 +47,11 @@ func (c *Communicator) listenToClient() {
 		var e event
 		err := c.conn.ReadJSON(e)
 		if err != nil {
-			log.Println(err)
+			if isDisconnect(err) {
+				return
+			}
+			log.Errorf("Error reading json: %s", err)
+
 			return
 		}
 

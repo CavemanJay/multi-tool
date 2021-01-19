@@ -3,16 +3,19 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"sync"
 
 	comms "github.com/JayCuevas/gogurt/communications"
 	filesync "github.com/JayCuevas/gogurt/sync"
 	"github.com/gorilla/websocket"
+	"github.com/op/go-logging"
 )
 
-var lock sync.Mutex
+var (
+	lock sync.Mutex
+	log  = logging.MustGetLogger("gogurt")
+)
 
 type Server struct {
 	fileCreated  chan filesync.File
@@ -26,16 +29,16 @@ type Server struct {
 
 func NewServer(rootFolder string, recursive bool, port int) *Server {
 	server := &Server{
-		fileCreated: make(chan filesync.File),
-		Port:        port,
-		filesList:   []filesync.File{},
-		clientCount: 0,
+		fileCreated:  make(chan filesync.File),
+		Port:         port,
+		filesList:    []filesync.File{},
+		clientCount:  0,
+		communicator: comms.NewCommunicator(nil),
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
 			CheckOrigin:     func(r *http.Request) bool { return true },
 		},
-		communicator: comms.NewCommunicator(nil),
 	}
 
 	server.fileWatcher = filesync.FileWatcher{
@@ -53,7 +56,6 @@ func (s *Server) addFile(file filesync.File) {
 	lock.Lock()
 	s.filesList = append(s.filesList, file)
 	lock.Unlock()
-	log.Println(len(s.filesList))
 }
 
 func (s *Server) Listen() error {
@@ -62,17 +64,17 @@ func (s *Server) Listen() error {
 	http.HandleFunc("/ws", s.socketEndpoint())
 	http.HandleFunc("/files", s.filesEndpoint())
 
-	log.Printf("Server watching folder: %s", s.fileWatcher.Root)
-	log.Printf("Server listening on :%d", s.Port)
+	log.Debugf("Server watching folder: %s", s.fileWatcher.Root)
+	log.Infof("Server listening on localhost:%d", s.Port)
 
-	go func() {
-		err := s.fileWatcher.IndexFiles(s.addFile)
+	// go func() {
+	// 	err := s.fileWatcher.IndexFiles(s.addFile)
 
-		if err != nil {
-			log.Printf("Error indexing files: %v", err)
-			return
-		}
-	}()
+	// 	if err != nil {
+	// 		log.Errorf("Error indexing files: %v", err)
+	// 		return
+	// 	}
+	// }()
 	go s.fileWatcher.Watch(exit)
 	return http.ListenAndServe(fmt.Sprintf(":%d", s.Port), nil)
 }
@@ -81,8 +83,14 @@ func (s *Server) filesEndpoint() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(s.filesList)
-		log.Println(len(s.filesList))
 	}
+}
+
+func (s *Server) handleClientDisconnect(ws *websocket.Conn) {
+	ws.Close()
+	s.clientCount--
+	log.Infof("Client disconnected: %s", ws.RemoteAddr().String())
+	log.Debugf("%d client(s) remaining", s.clientCount)
 }
 
 func (s *Server) socketEndpoint() http.HandlerFunc {
@@ -90,18 +98,14 @@ func (s *Server) socketEndpoint() http.HandlerFunc {
 		ws, err := s.upgrader.Upgrade(w, r, nil)
 
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 			return
 		}
 
-		defer func() {
-			ws.Close()
-			s.clientCount--
-			log.Printf("Client disconnected: %s", ws.RemoteAddr().String())
-		}()
+		defer s.handleClientDisconnect(ws)
 
 		s.clientCount++
-		log.Printf("Client connected: %s", ws.RemoteAddr().String())
+		log.Infof("Client connected: %s", ws.RemoteAddr().String())
 
 		s.communicator.HandleComms(ws)
 	}
