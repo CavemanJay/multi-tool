@@ -17,3 +17,13 @@ type User struct {
 type Manager struct {
 	conn *gorm.DB
 }
+
+func (m *Manager) Close() {
+	db, err := m.conn.DB()
+	if err != nil {
+		log.Errorf("Error retriving database connection to close: %s", err)
+		return
+	}
+
+	db.Close()
+}
