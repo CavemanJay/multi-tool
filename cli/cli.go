@@ -18,6 +18,7 @@ import (
 type ServerOptions struct {
 	Recursive  bool
 	RootFolder string
+	Append     string
 }
 
 type ClientOptions struct {
@@ -84,7 +85,7 @@ func InitApp() *cli.App {
 	app.Flags = []cli.Flag{
 		&cli.PathFlag{
 			Name:        "appdata",
-			Usage:       "`PATH` to the folder where app data is stored",
+			Usage:       "The `PATH` to the folder where app data is stored",
 			Value:       getAppDataPath(),
 			Destination: &Configuration.AppDataFolder,
 		},
@@ -100,7 +101,7 @@ func InitApp() *cli.App {
 					Name:        "port",
 					Aliases:     []string{"p"},
 					Usage:       "The `PORT` to listen on",
-					Value:       8080,
+					Value:       8081,
 					Destination: &Configuration.Port,
 				},
 				&cli.BoolFlag{
@@ -113,8 +114,14 @@ func InitApp() *cli.App {
 					Name:        "folder",
 					Aliases:     []string{"f"},
 					Usage:       "The root `FOLDER` to synchronize",
-					Value:       path.Join(u.HomeDir, "Sync", "Backgrounds"),
+					Value:       path.Join(u.HomeDir, "Sync"),
 					Destination: &Configuration.ServerOptions.RootFolder,
+				},
+				&cli.PathFlag{
+					Name:        "append",
+					Aliases:     []string{"a"},
+					Usage:       "Appends `PATH` to the root folder",
+					Destination: &Configuration.ServerOptions.Append,
 				},
 			},
 			Action: func(c *cli.Context) error {
@@ -149,8 +156,8 @@ func InitApp() *cli.App {
 				&cli.IntFlag{
 					Name:        "port",
 					Aliases:     []string{"p"},
-					Usage:       "The `PORT` to listen on",
-					Value:       8080,
+					Usage:       "The `PORT` to connect to",
+					Value:       8081,
 					Destination: &Configuration.Port,
 				},
 				&cli.StringFlag{
@@ -162,7 +169,7 @@ func InitApp() *cli.App {
 			},
 			Action: func(ctx *cli.Context) error {
 				cfg := &Configuration
-				c := client.Client{}
+				c := client.NewClient()
 
 				return c.Connect(cfg.ClientOptions.Host, cfg.Port)
 			},

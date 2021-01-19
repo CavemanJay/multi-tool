@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 
+	comms "github.com/JayCuevas/gogurt/communications"
 	"github.com/gorilla/websocket"
 	"github.com/op/go-logging"
 )
@@ -11,6 +12,13 @@ import (
 var log = logging.MustGetLogger("gogurt")
 
 type Client struct {
+	communicator *comms.Communicator
+}
+
+func NewClient() *Client {
+	return &Client{
+		communicator: comms.NewCommunicator(nil),
+	}
 }
 
 func (c *Client) Connect(host string, port int) error {
@@ -27,19 +35,7 @@ func (c *Client) Connect(host string, port int) error {
 
 	defer conn.Close()
 
-	// err = conn.WriteMessage(websocket.TextMessage, []byte("Test"))
-	// if err != nil {
-	// 	return err
-	// }
-
-	for {
-		_, bytes, err := conn.ReadMessage()
-		if err != nil {
-			log.Error(err)
-		}
-
-		log.Debugf("Received message from server: %s", bytes)
-	}
+	c.communicator.HandleComms(conn)
 
 	return nil
 }

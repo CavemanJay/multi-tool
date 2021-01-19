@@ -11,6 +11,9 @@ compile:
 listen: compile
 	./$(linuxOut) listen
 
+listen-music: compile
+	./$(linuxOut) listen -a "Music"
+
 wsl: compile
 	./$(linuxOut) listen -f "/mnt/c/Users/cueva/Sync/"
 
