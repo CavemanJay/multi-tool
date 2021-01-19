@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	comms "github.com/JayCuevas/gogurt/communications"
+	"github.com/JayCuevas/gogurt/database"
 	filesync "github.com/JayCuevas/gogurt/sync"
 	"github.com/gorilla/websocket"
 	"github.com/op/go-logging"
@@ -25,15 +26,27 @@ type Server struct {
 	fileWatcher  filesync.FileWatcher
 	clientCount  int
 	communicator *comms.Communicator
+	db           *database.Manager
 }
 
 func NewServer(rootFolder string, recursive bool, port int) *Server {
+
+	db, err := database.NewManager()
+	if err != nil {
+		log.Fatalf("Error initializing server: %s", err)
+	}
+	err = db.ApplyMigrations()
+	if err != nil {
+		log.Fatalf("Error applying database migrations: %s", err)
+	}
+
 	server := &Server{
 		fileCreated:  make(chan filesync.File),
 		Port:         port,
 		filesList:    []filesync.File{},
 		clientCount:  0,
 		communicator: comms.NewCommunicator(nil),
+		db:           db,
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
@@ -53,12 +66,14 @@ func NewServer(rootFolder string, recursive bool, port int) *Server {
 }
 
 func (s *Server) addFile(file filesync.File) {
-	lock.Lock()
-	s.filesList = append(s.filesList, file)
-	lock.Unlock()
+	// lock.Lock()
+	// s.filesList = append(s.filesList, file)
+	s.db.Upsert(&file)
+	// lock.Unlock()
 }
 
 func (s *Server) Listen() error {
+	defer s.db.Close()
 	exit := make(chan struct{}, 1)
 
 	http.HandleFunc("/ws", s.socketEndpoint())
@@ -67,14 +82,15 @@ func (s *Server) Listen() error {
 	log.Debugf("Server watching folder: %s", s.fileWatcher.Root)
 	log.Infof("Server listening on localhost:%d", s.Port)
 
-	// go func() {
-	// 	err := s.fileWatcher.IndexFiles(s.addFile)
+	go func() {
+		err := s.fileWatcher.IndexFiles(s.addFile)
 
-	// 	if err != nil {
-	// 		log.Errorf("Error indexing files: %v", err)
-	// 		return
-	// 	}
-	// }()
+		if err != nil {
+			log.Errorf("Error indexing files: %v", err)
+			return
+		}
+		log.Debug("Done indexing files")
+	}()
 	go s.fileWatcher.Watch(exit)
 	return http.ListenAndServe(fmt.Sprintf(":%d", s.Port), nil)
 }
@@ -82,7 +98,7 @@ func (s *Server) Listen() error {
 func (s *Server) filesEndpoint() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(s.filesList)
+		json.NewEncoder(w).Encode(s.db.All())
 	}
 }
 
@@ -112,50 +128,18 @@ func (s *Server) socketEndpoint() http.HandlerFunc {
 }
 
 func (s *Server) fileCreatedHandler(file filesync.File) error {
-	// Iterate over the files and see if the file has already been handled
-	for i, f := range s.filesList {
-		if f.Path == file.Path {
-			// If the hashes are the same then the file has been handled already
-			if f.Hash == file.Hash {
-				return nil
-			}
-
-			// The hashes are different, update the existing copy in memory
-			lock.Lock()
-			s.filesList[i] = file
-			lock.Unlock()
-		}
-	}
-
 	s.addFile(file)
 
 	if s.clientCount > 0 {
 		// This will block if there are no clients connected
-		select {
-		case s.fileCreated <- file:
-			// default:
-		}
+		s.fileCreated <- file
 	}
 
 	return nil
 }
 
-func removeFile(files []*filesync.File, i int) []*filesync.File {
-	lock.Lock()
-	defer lock.Unlock()
-
-	files[i] = files[len(files)-1]
-	return files[:len(files)-1]
-}
-
 func (s *Server) filesDeletedHandler(paths []string) error {
-	// for _, path := range paths {
-	// 	for i, file := range s.filesList {
-	// 		if path == file.Path {
-	// 			s.filesList = removeFile(s.filesList, i)
-	// 		}
-	// 	}
-	// }
+	s.db.Delete(paths)
 
 	return nil
 }
