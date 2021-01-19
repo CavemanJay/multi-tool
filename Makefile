@@ -24,7 +24,7 @@ all:
 
 xgo:
 	mkdir -p $(rootOut)
-	xgo -v -x -dest ./$(rootOut) --targets=windows/*,linux/amd64,linux/386 github.com/JayCuevas/gogurt
+	xgo -v -x -tags='release' -ldflags='-s -w' -dest ./$(rootOut) --targets=windows/*,linux/amd64,linux/386 github.com/JayCuevas/gogurt
 
 clean:
 	rm -rvf $(rootOut)
