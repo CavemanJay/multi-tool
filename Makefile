@@ -23,9 +23,8 @@ all:
 	GOOS=linux go build -o $(linuxOut)
 
 xgo:
-	mkdir -p build
-	cd build && \
-	xgo -v -x --targets=windows/*,linux/amd64,linux/386 github.com/JayCuevas/gogurt
+	mkdir -p $(rootOut)
+	xgo -v -x -dest ./$(rootOut) --targets=windows/*,linux/amd64,linux/386 github.com/JayCuevas/gogurt
 
 clean:
 	rm -rvf $(rootOut)
