@@ -2,9 +2,11 @@
 rootOut = build
 linuxOut = $(rootOut)/gogurt
 winOut = $(rootOut)/gogurt.exe
+releaseFlags = -s -w
+buildCmd = go build
 
 compile:
-	go build -o $(linuxOut)
+	$(buildCmd) -o $(linuxOut)
 
 listen: compile
 	./$(linuxOut) listen
@@ -19,8 +21,12 @@ dial: compile
 	./$(linuxOut) dial
 
 all: 
-	GOOS=windows go build -o $(winOut)
-	GOOS=linux go build -o $(linuxOut)
+	GOOS=windows $(buildCmd) -o $(winOut)
+	GOOS=linux $(buildCmd) -o $(linuxOut)
+
+release:
+	GOOS=windows $(buildCmd) -o $(winOut) -tags release -ldflags="$(releaseFlags)"
+	GOOS=linux $(buildCmd) -o $(linuxOut) -tags release -ldflags="$(releaseFlags)"
 
 xgo:
 	mkdir -p $(rootOut)
