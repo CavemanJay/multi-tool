@@ -1,14 +1,17 @@
 package sync
 
 import (
-	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/karrick/godirwalk"
+	"github.com/op/go-logging"
+
 	"github.com/fsnotify/fsnotify"
 )
+
+var log = logging.MustGetLogger("gogurt")
 
 type FileWatcher struct {
 	Root         string
@@ -74,7 +77,7 @@ func (fw *FileWatcher) listenForFsEvents() {
 
 		case err := <-fw.watcher.Errors:
 			// watch for errors
-			fmt.Printf("Watcher error: %#v", err)
+			log.Errorf("Watcher error: %#v", err)
 		}
 	}
 }
@@ -132,7 +135,7 @@ func (fw *FileWatcher) handleFileCreated(e fsnotify.Event) {
 
 	file, err := GetFileInfo(fw.Root, e.Name)
 	if err != nil {
-		log.Printf("Error retreiving file: %v", err)
+		log.Errorf("Error retreiving file: %v", err)
 		return
 	}
 
@@ -140,27 +143,40 @@ func (fw *FileWatcher) handleFileCreated(e fsnotify.Event) {
 }
 
 func (fw FileWatcher) IndexFiles(fileFound func(file File)) error {
-	// files := []*File{}
-
-	err := filepath.Walk(fw.Root, func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() {
+	count := 0
+	err := godirwalk.Walk(fw.Root, &godirwalk.Options{
+		Callback: func(path string, de *godirwalk.Dirent) error {
+			if !de.IsDir() {
+				count++
+			}
 			return nil
-		}
-
-		file, err := GetFileInfo(fw.Root, path)
-		if err != nil {
-			return err
-		}
-		// files = append(files, file)
-		fileFound(*file)
-
-		return nil
+		},
 	})
-
 	if err != nil {
-		return err
+		log.Error(err)
 	}
+	// bar := pb.StartNew(count)
+	// defer bar.Finish()
 
-	// return files, nil
-	return nil
+	// indexed := 0
+	return godirwalk.Walk(fw.Root, &godirwalk.Options{
+		Callback: func(path string, de *godirwalk.Dirent) error {
+			if de.IsDir() {
+				return nil
+			}
+
+			file, err := GetFileInfo(fw.Root, path)
+			if err != nil {
+				return err
+			}
+
+			fileFound(*file)
+			// bar.Increment()
+			// fmt.Printf("\rIndexed file %d of %d", indexed, count)
+			// indexed++
+
+			return nil
+		},
+		Unsorted: true,
+	})
 }

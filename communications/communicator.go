@@ -1,7 +1,7 @@
 package communications
 
 import (
-	"fmt"
+	"encoding/json"
 	"strings"
 
 	"github.com/JayCuevas/gogurt/sync"
@@ -13,15 +13,18 @@ var log = logging.MustGetLogger("gogurt")
 
 type Communicator struct {
 	conn         *websocket.Conn
-	FileCreated  chan sync.File
+	syncFolder   string
+	FileCreated  chan sync.FileWithData
 	FilesDeleted chan []string
+	FileReceived func(file sync.FileWithData)
 }
 
-func NewCommunicator(socket *websocket.Conn) *Communicator {
+func NewCommunicator(socket *websocket.Conn, syncFolder string) *Communicator {
 	return &Communicator{
 		conn:         socket,
-		FileCreated:  make(chan sync.File),
+		FileCreated:  make(chan sync.FileWithData),
 		FilesDeleted: make(chan []string),
+		syncFolder:   syncFolder,
 	}
 }
 
@@ -29,23 +32,30 @@ func isDisconnect(err error) bool {
 	return strings.Contains(err.Error(), "closure")
 }
 
-func (c *Communicator) sendNewFileMessage(file *sync.File) error {
-	event, err := fileCreatedEvent(file)
+func (c *Communicator) sendNewFileMessage(file *sync.FileWithData) error {
+	event, err := fileCreatedEvent(file, c.syncFolder)
 	if err != nil {
 		return err
 	}
+
 	return c.conn.WriteJSON(event)
 }
 
-func (c *Communicator) handleNewFileMessage(e event) {
-
+func (c *Communicator) handleNewFileMessage(e Event) {
+	var file sync.FileWithData
+	err := json.Unmarshal(e.Json, &file)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	c.FileReceived(file)
 }
 
 // TODO: Handle events not strings
 func (c *Communicator) listenToClient() {
 	for {
-		var e event
-		err := c.conn.ReadJSON(e)
+		var e Event
+		err := c.conn.ReadJSON(&e)
 		if err != nil {
 			if isDisconnect(err) {
 				return
@@ -55,7 +65,7 @@ func (c *Communicator) listenToClient() {
 			return
 		}
 
-		switch e.id {
+		switch e.Id {
 		case EventFileCreated:
 			c.handleNewFileMessage(e)
 		case EventFileDeleted:
@@ -68,9 +78,10 @@ func (c *Communicator) writeToClient() {
 	for {
 		select {
 		case file := <-c.FileCreated:
+			// log.Debug("Communicator received file")
 			c.sendNewFileMessage(&file)
 		case deletedFiles := <-c.FilesDeleted:
-			fmt.Printf("Handling deleted files: %v", deletedFiles)
+			log.Debugf("Handling deleted files: %v", deletedFiles)
 		}
 	}
 }

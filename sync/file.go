@@ -4,16 +4,15 @@ import (
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
 
-type file struct {
+type FileWithData struct {
 	Path   string
 	Hash   string
 	Base64 string `json:"data"`
@@ -24,20 +23,17 @@ type File struct {
 	Hash string
 }
 
-func (f File) ToJson() ([]byte, error) {
-	toSend, err := f.getFileToSend()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(toSend)
+func (f File) ToDataFile(syncRoot string) (FileWithData, error) {
+	toSend, err := f.getFileToSend(syncRoot)
+	return *toSend, err
 }
 
-func (f File) getFileToSend() (*file, error) {
-	encoded, err := getBase64FileData(f.Path)
+func (f File) getFileToSend(root string) (*FileWithData, error) {
+	encoded, err := getBase64FileData(path.Join(root, f.Path))
 	if err != nil {
 		return nil, err
 	}
-	return &file{
+	return &FileWithData{
 		Path:   f.Path,
 		Hash:   f.Hash,
 		Base64: encoded,
@@ -93,7 +89,7 @@ func getBase64FileData(path string) (string, error) {
 	data, err := readFile(path)
 
 	if err != nil {
-		log.Printf("Error reading file: %v", err)
+		log.Errorf("Error reading file: %v", err)
 		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(data), nil
@@ -116,7 +112,7 @@ func GetFileInfo(syncRoot string, path string) (*File, error) {
 	hash, err := hashFile(path)
 
 	if err != nil {
-		log.Printf("Error hashing file: %v", err)
+		log.Errorf("Error hashing file: %v", err)
 		return nil, err
 	}
 

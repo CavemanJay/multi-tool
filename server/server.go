@@ -19,7 +19,6 @@ var (
 )
 
 type Server struct {
-	fileCreated  chan filesync.File
 	upgrader     websocket.Upgrader
 	filesList    []filesync.File
 	Port         int
@@ -30,7 +29,6 @@ type Server struct {
 }
 
 func NewServer(rootFolder string, recursive bool, port int) *Server {
-
 	db, err := database.NewManager()
 	if err != nil {
 		log.Fatalf("Error initializing server: %s", err)
@@ -41,11 +39,10 @@ func NewServer(rootFolder string, recursive bool, port int) *Server {
 	}
 
 	server := &Server{
-		fileCreated:  make(chan filesync.File),
 		Port:         port,
 		filesList:    []filesync.File{},
 		clientCount:  0,
-		communicator: comms.NewCommunicator(nil),
+		communicator: comms.NewCommunicator(nil, rootFolder),
 		db:           db,
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
@@ -131,8 +128,12 @@ func (s *Server) fileCreatedHandler(file filesync.File) error {
 	s.addFile(file)
 
 	if s.clientCount > 0 {
+		f, err := file.ToDataFile(s.fileWatcher.Root)
+		if err != nil {
+			return err
+		}
 		// This will block if there are no clients connected
-		s.fileCreated <- file
+		s.communicator.FileCreated <- f
 	}
 
 	return nil

@@ -1,6 +1,10 @@
 package communications
 
-import "github.com/JayCuevas/gogurt/sync"
+import (
+	"encoding/json"
+
+	"github.com/JayCuevas/gogurt/sync"
+)
 
 type eventId int
 
@@ -9,18 +13,19 @@ const (
 	EventFileDeleted
 )
 
-type event struct {
-	id   eventId
-	json []byte
+type Event struct {
+	Id   eventId
+	Json []byte
 }
 
-func fileCreatedEvent(file *sync.File) (*event, error) {
-	data, err := file.ToJson()
+func fileCreatedEvent(file *sync.FileWithData, root string) (*Event, error) {
+	json, err := json.Marshal(file)
 	if err != nil {
 		return nil, err
 	}
-	return &event{
-		id:   EventFileCreated,
-		json: data,
+
+	return &Event{
+		Id:   EventFileCreated,
+		Json: json,
 	}, nil
 }

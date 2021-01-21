@@ -1,7 +1,8 @@
 
+appName=gogurt
 rootOut = build
-linuxOut = $(rootOut)/gogurt
-winOut = $(rootOut)/gogurt.exe
+linuxOut = $(rootOut)/$(appName)
+winOut = $(rootOut)/$(appName).exe
 releaseFlags = -s -w
 buildCmd = go build
 
@@ -12,10 +13,10 @@ listen: compile
 	./$(linuxOut) listen
 
 listen-music: compile
-	./$(linuxOut) listen -a "Music"
+	./$(linuxOut) -a "Music" listen 
 
 wsl: compile
-	./$(linuxOut) listen -f "/mnt/c/Users/cueva/Sync/"
+	./$(linuxOut) -f "/mnt/c/Users/cueva/Sync/" listen 
 
 help: compile
 	./$(linuxOut) -h
@@ -33,7 +34,13 @@ release:
 
 xgo:
 	mkdir -p $(rootOut)
-	xgo -v -x -tags='release' -ldflags='-s -w' -dest ./$(rootOut) --targets=windows/*,linux/amd64,linux/386 github.com/JayCuevas/gogurt
+	xgo -v -x -tags='release' -ldflags='-s -w' -dest ./$(rootOut) --targets=windows/*,linux/amd64,linux/386 github.com/JayCuevas/$(appName)
 
 clean:
 	rm -rvf $(rootOut)
+
+install:
+	go install .
+
+uninstall:
+	rm -rvf "${GOPATH}/bin/$(appName)"

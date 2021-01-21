@@ -5,6 +5,7 @@ import (
 	"net/url"
 
 	comms "github.com/JayCuevas/gogurt/communications"
+	"github.com/JayCuevas/gogurt/sync"
 	"github.com/gorilla/websocket"
 	"github.com/op/go-logging"
 )
@@ -13,12 +14,20 @@ var log = logging.MustGetLogger("gogurt")
 
 type Client struct {
 	communicator *comms.Communicator
+	root         string
 }
 
-func NewClient() *Client {
+func NewClient(root string) *Client {
+	c := comms.NewCommunicator(nil, "")
+	c.FileReceived = onFileReceived
 	return &Client{
-		communicator: comms.NewCommunicator(nil),
+		communicator: c,
+		root:         root,
 	}
+}
+
+func onFileReceived(file sync.FileWithData) {
+	log.Debugf("Received file: %v", file)
 }
 
 func (c *Client) Connect(host string, port int) error {
@@ -28,6 +37,7 @@ func (c *Client) Connect(host string, port int) error {
 		Path:   "/ws",
 	}
 
+	log.Debugf("Attempting to connect to %s", u.String())
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
 		return err

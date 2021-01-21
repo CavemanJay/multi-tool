@@ -16,9 +16,7 @@ import (
 )
 
 type ServerOptions struct {
-	Recursive  bool
-	RootFolder string
-	Append     string
+	Recursive bool
 }
 
 type ClientOptions struct {
@@ -30,6 +28,8 @@ type Config struct {
 	ServerOptions ServerOptions
 	ClientOptions ClientOptions
 	AppDataFolder string
+	SyncFolder    string
+	Append        string
 }
 
 var Configuration = Config{}
@@ -44,9 +44,6 @@ func getAppDataPath() string {
 }
 
 func initLogger(file io.Writer) {
-
-	logFile := logging.AddModuleLevel(logging.NewLogBackend(file, "", log.Lshortfile|log.Ldate|log.Ltime))
-	logFile.SetLevel(logging.INFO, "gogurt")
 
 	// format := logging.MustStringFormatter(`%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:.4s} %{id:03d}%{color:reset} %{message}`)
 	// format := logging.MustStringFormatter(`%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:.4s} %{id:03x}%{color:reset} %{message}`)
@@ -66,7 +63,14 @@ func initLogger(file io.Writer) {
 	// 	logging.SetBackend(stdErr, logFile, stdOut)
 	// }
 
-	logging.SetBackend(logFile, stdOut)
+	if file != nil {
+		logFile := logging.AddModuleLevel(logging.NewLogBackend(file, "", log.Lshortfile|log.Ldate|log.Ltime))
+		logFile.SetLevel(logging.INFO, "gogurt")
+		logging.SetBackend(logFile, stdOut)
+	} else {
+		logging.SetBackend(stdOut)
+	}
+
 }
 
 func InitApp() *cli.App {
@@ -75,7 +79,7 @@ func InitApp() *cli.App {
 	app.Usage = "Handles functions I commonly need to do"
 	app.UseShortOptionHandling = true
 	app.EnableBashCompletion = true
-	app.Version = "v0.1.0"
+	app.Version = "0.1.0"
 
 	u, err := user.Current()
 	if err != nil {
@@ -89,10 +93,29 @@ func InitApp() *cli.App {
 			Value:       getAppDataPath(),
 			Destination: &Configuration.AppDataFolder,
 		},
+		&cli.PathFlag{
+			Name:        "folder",
+			Aliases:     []string{"f"},
+			Usage:       "The root `FOLDER` to synchronize",
+			Value:       path.Join(u.HomeDir, "Sync"),
+			Destination: &Configuration.SyncFolder,
+		},
+		&cli.StringFlag{
+			Name:        "append",
+			Aliases:     []string{"a"},
+			Usage:       "Appends `PATH` to the root folder",
+			Destination: &Configuration.Append,
+		},
+		&cli.BoolFlag{
+			Name:        "recursive",
+			Aliases:     []string{"r"},
+			Usage:       "Whether or not to recursively watch the root folder",
+			Destination: &Configuration.ServerOptions.Recursive,
+		},
 	}
 
 	app.Commands = []*cli.Command{
-		&cli.Command{
+		{
 			Name:    "listen",
 			Aliases: []string{"l"},
 			Usage:   "Listen on the specified port for clients",
@@ -104,32 +127,13 @@ func InitApp() *cli.App {
 					Value:       8081,
 					Destination: &Configuration.Port,
 				},
-				&cli.BoolFlag{
-					Name:        "recursive",
-					Aliases:     []string{"r"},
-					Usage:       "Whether or not to recursively watch the root folder",
-					Destination: &Configuration.ServerOptions.Recursive,
-				},
-				&cli.PathFlag{
-					Name:        "folder",
-					Aliases:     []string{"f"},
-					Usage:       "The root `FOLDER` to synchronize",
-					Value:       path.Join(u.HomeDir, "Sync"),
-					Destination: &Configuration.ServerOptions.RootFolder,
-				},
-				&cli.PathFlag{
-					Name:        "append",
-					Aliases:     []string{"a"},
-					Usage:       "Appends `PATH` to the root folder",
-					Destination: &Configuration.ServerOptions.Append,
-				},
 			},
 			Action: func(c *cli.Context) error {
 				cfg := &Configuration
-				_, err := os.Stat(cfg.ServerOptions.RootFolder)
+				_, err := os.Stat(cfg.SyncFolder)
 				if err != nil {
 					if os.IsNotExist(err) {
-						return fmt.Errorf("Folder \"%s\" does not exist", cfg.ServerOptions.RootFolder)
+						return fmt.Errorf("Folder \"%s\" does not exist", cfg.SyncFolder)
 					}
 					return err
 				}
@@ -143,12 +147,16 @@ func InitApp() *cli.App {
 				defer logFile.Close()
 				initLogger(logFile)
 
-				s := server.NewServer(cfg.ServerOptions.RootFolder, cfg.ServerOptions.Recursive, cfg.Port)
+				if cfg.Append != "" {
+					cfg.SyncFolder = path.Join(cfg.SyncFolder, cfg.Append)
+				}
+
+				s := server.NewServer(cfg.SyncFolder, cfg.ServerOptions.Recursive, cfg.Port)
 
 				return s.Listen()
 			},
 		},
-		&cli.Command{
+		{
 			Name:    "dial",
 			Aliases: []string{"d"},
 			Usage:   "Connects to an existing server instance",
@@ -169,7 +177,8 @@ func InitApp() *cli.App {
 			},
 			Action: func(ctx *cli.Context) error {
 				cfg := &Configuration
-				c := client.NewClient()
+				c := client.NewClient(cfg.SyncFolder)
+				initLogger(nil)
 
 				return c.Connect(cfg.ClientOptions.Host, cfg.Port)
 			},
