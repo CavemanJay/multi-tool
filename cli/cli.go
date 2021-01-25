@@ -16,7 +16,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var Configuration = config.Config{}
+var configuration = config.Config{}
 
 func getAppDataPath() string {
 	appData, err := os.UserCacheDir()
@@ -75,33 +75,39 @@ func InitApp() *cli.App {
 			Name:        "appdata",
 			Usage:       "The `PATH` to the folder where app data is stored",
 			Value:       getAppDataPath(),
-			Destination: &Configuration.AppDataFolder,
+			Destination: &configuration.AppDataFolder,
 		},
 		&cli.PathFlag{
 			Name:        "folder",
 			Aliases:     []string{"f"},
 			Usage:       "The root `FOLDER` to synchronize",
 			Value:       path.Join(u.HomeDir, "Sync"),
-			Destination: &Configuration.SyncFolder,
+			Destination: &configuration.SyncFolder,
 		},
 		&cli.StringFlag{
 			Name:        "append",
 			Aliases:     []string{"a"},
 			Usage:       "Appends `PATH` to the root folder",
-			Destination: &Configuration.Append,
+			Destination: &configuration.Append,
 		},
 		&cli.BoolFlag{
 			Name:        "recursive",
 			Aliases:     []string{"r"},
 			Usage:       "Whether or not to recursively watch the root folder",
-			Destination: &Configuration.Recursive,
+			Destination: &configuration.Recursive,
 			Value:       true,
 		},
 		&cli.BoolFlag{
 			Name:        "use-last-run",
 			Aliases:     []string{"u"},
 			Usage:       "Use the options specified in the last run",
-			Destination: &Configuration.ServerOptions.UseLastRun,
+			Destination: &configuration.UseLastRun,
+		},
+		&cli.PathFlag{
+			Name:        "use-config",
+			Aliases:     []string{"c"},
+			Usage:       "The `FILE` to read config values from",
+			Destination: &configuration.ConfigPath,
 		},
 	}
 
@@ -116,13 +122,7 @@ func InitApp() *cli.App {
 					Aliases:     []string{"p"},
 					Usage:       "The `PORT` to listen on",
 					Value:       8081,
-					Destination: &Configuration.Port,
-				},
-				&cli.PathFlag{
-					Name:        "use-config",
-					Aliases:     []string{"c"},
-					Usage:       "The `FILE` to read config values from",
-					Destination: &Configuration.ServerOptions.ConfigPath,
+					Destination: &configuration.Port,
 				},
 			},
 			Action: listen,
@@ -137,16 +137,23 @@ func InitApp() *cli.App {
 					Aliases:     []string{"p"},
 					Usage:       "The `PORT` to connect to",
 					Value:       8081,
-					Destination: &Configuration.Port,
+					Destination: &configuration.Port,
 				},
 				&cli.StringFlag{
 					Name:        "host",
 					Usage:       "The `HOST` to connect to",
-					Destination: &Configuration.ClientOptions.Host,
+					Destination: &configuration.ClientOptions.Host,
 					Value:       "localhost",
 				},
 			},
 			Action: dial,
+		},
+		{
+			Name:    "archive",
+			Aliases: []string{"a"},
+			// Usage:   "Archives",
+			Flags:  []cli.Flag{},
+			Action: archive,
 		},
 	}
 
@@ -154,7 +161,7 @@ func InitApp() *cli.App {
 }
 
 func listen(ctx *cli.Context) error {
-	cfg := &Configuration
+	cfg := &configuration
 
 	if err := handleConfig(); err != nil {
 		return err
@@ -190,7 +197,7 @@ func listen(ctx *cli.Context) error {
 
 func dial(ctx *cli.Context) error {
 
-	cfg := &Configuration
+	cfg := &configuration
 
 	if err := handleConfig(); err != nil {
 		return err
@@ -205,20 +212,32 @@ func dial(ctx *cli.Context) error {
 }
 
 func handleConfig() error {
-	cfg := &Configuration
-	if cfg.ServerOptions.UseLastRun {
+	cfg := &configuration
+	if cfg.UseLastRun {
 		cfgFile := path.Join(getAppDataPath(), "last_run.json")
 		cfg, err := config.ReadConfig(cfgFile)
 		if err != nil {
 			return err
 		}
-		Configuration = *cfg
-	} else if len(cfg.ServerOptions.ConfigPath) > 0 {
-		cfg, err := config.ReadConfig(cfg.ServerOptions.ConfigPath)
+		configuration = *cfg
+	} else if len(cfg.ConfigPath) > 0 {
+		cfg, err := config.ReadConfig(cfg.ConfigPath)
 		if err != nil {
 			return err
 		}
-		Configuration = *cfg
+		configuration = *cfg
 	}
+	return nil
+}
+
+func archive(ctx *cli.Context) error {
+	cfg := &configuration
+	if err := handleConfig(); err != nil {
+		return err
+	}
+	initLogger(nil)
+
+	log.Printf("%#v", cfg)
+
 	return nil
 }

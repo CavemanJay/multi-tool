@@ -10,22 +10,28 @@ import (
 var log = logging.MustGetLogger("gogurt")
 
 type ServerOptions struct {
-	ConfigPath string
-	UseLastRun bool
 }
 
 type ClientOptions struct {
 	Host string
 }
 
+type ArchiveOptions struct {
+	OutFolder string
+	InFolders []string
+}
+
 type Config struct {
-	ServerOptions ServerOptions `json:"-"`
-	ClientOptions ClientOptions //`json:"-"`
-	Recursive     bool
-	Port          int
-	AppDataFolder string
-	SyncFolder    string
-	Append        string
+	// ServerOptions  ServerOptions `json:"-"`
+	ClientOptions  ClientOptions
+	ArchiveOptions ArchiveOptions
+	UseLastRun     bool `json:"-"`
+	Recursive      bool
+	Port           int
+	AppDataFolder  string
+	SyncFolder     string
+	Append         string
+	ConfigPath     string
 }
 
 func ReadConfig(path string) (*Config, error) {
