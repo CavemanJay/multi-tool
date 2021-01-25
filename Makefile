@@ -31,9 +31,6 @@ all:
 	GOOS=windows $(buildCmd) -o $(winOut)
 	GOOS=linux $(buildCmd) -o $(linuxOut)
 
-xgo:
-	mkdir -p $(releasePath)
-	xgo -v -x -tags='release' -ldflags='$(releaseFlags) $(buildFlags)' -dest ./$(releasePath) --targets=windows/*,linux/amd64,linux/386 github.com/CavemanJay/$(appName)
 
 clean:
 	rm -rvf $(rootOut) build data $(releasePath)/*
@@ -44,5 +41,7 @@ install:
 uninstall:
 	rm -rvf "${GOPATH}/bin/$(appName)"
 
-release: clean xgo
-	find ./ -name "*.go" -o -name "go.*" -o -name "*.yml" | tar -cvf $(releasePath)/$(appName)-$(version).tar.gz -T -
+release: clean 
+	mkdir -p $(releasePath)
+	xgo -v -out='$(appName)-$(version)' -tags='release' -ldflags='$(releaseFlags) $(buildFlags)' -dest ./$(releasePath) --targets=windows/*,linux/amd64,linux/386 github.com/CavemanJay/$(appName)
+	# find ./ -name "*.go" -o -name "go.*" -o -name "*.yml" | tar -cvf $(releasePath)/$(appName)-$(version).tar.gz -T -
