@@ -34,7 +34,7 @@ release:
 
 xgo:
 	mkdir -p $(rootOut)
-	xgo -v -x -tags='release' -ldflags='-s -w' -dest ./$(rootOut) --targets=windows/*,linux/amd64,linux/386 github.com/JayCuevas/$(appName)
+	xgo -v -x -tags='release' -ldflags='-s -w' -dest ./$(rootOut) --targets=windows/*,linux/amd64,linux/386 github.com/CavemanJay/$(appName)
 
 clean:
 	rm -rvf $(rootOut)

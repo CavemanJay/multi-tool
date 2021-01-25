@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/JayCuevas/gogurt/sync"
+	"github.com/CavemanJay/gogurt/sync"
 	"github.com/gorilla/websocket"
 	"github.com/op/go-logging"
 )

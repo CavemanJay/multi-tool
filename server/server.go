@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"sync"
 
-	comms "github.com/JayCuevas/gogurt/communications"
-	"github.com/JayCuevas/gogurt/database"
-	filesync "github.com/JayCuevas/gogurt/sync"
+	comms "github.com/CavemanJay/gogurt/communications"
+	"github.com/CavemanJay/gogurt/database"
+	filesync "github.com/CavemanJay/gogurt/sync"
 	"github.com/gorilla/websocket"
 	"github.com/op/go-logging"
 )

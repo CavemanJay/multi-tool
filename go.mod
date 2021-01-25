@@ -1,4 +1,4 @@
-module github.com/JayCuevas/gogurt
+module github.com/CavemanJay/gogurt
 
 go 1.15
 

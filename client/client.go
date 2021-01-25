@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/url"
 
-	comms "github.com/JayCuevas/gogurt/communications"
-	"github.com/JayCuevas/gogurt/sync"
+	comms "github.com/CavemanJay/gogurt/communications"
+	"github.com/CavemanJay/gogurt/sync"
 	"github.com/gorilla/websocket"
 	"github.com/op/go-logging"
 )

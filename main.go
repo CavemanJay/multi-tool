@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/JayCuevas/gogurt/cli"
+	"github.com/CavemanJay/gogurt/cli"
 	"github.com/op/go-logging"
 )
 

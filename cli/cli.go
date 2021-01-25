@@ -8,8 +8,8 @@ import (
 	"os/user"
 	"path"
 
-	"github.com/JayCuevas/gogurt/client"
-	"github.com/JayCuevas/gogurt/server"
+	"github.com/CavemanJay/gogurt/client"
+	"github.com/CavemanJay/gogurt/server"
 	"github.com/op/go-logging"
 
 	"github.com/urfave/cli/v2"

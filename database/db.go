@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/JayCuevas/gogurt/sync"
+	"github.com/CavemanJay/gogurt/sync"
 	"github.com/op/go-logging"
 	"gorm.io/gorm"
 )
