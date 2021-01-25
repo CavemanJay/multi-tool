@@ -57,13 +57,13 @@ func initLogger(file io.Writer) {
 
 }
 
-func InitApp() *cli.App {
+func InitApp(version string) *cli.App {
 	app := cli.NewApp()
 	app.Name = "Gogurt"
 	app.Usage = "Handles functions I commonly need to do"
 	app.UseShortOptionHandling = true
 	app.EnableBashCompletion = true
-	app.Version = "0.1.0"
+	app.Version = version
 
 	u, err := user.Current()
 	if err != nil {
