@@ -9,30 +9,14 @@ import (
 	"path"
 
 	"github.com/CavemanJay/gogurt/client"
+	"github.com/CavemanJay/gogurt/config"
 	"github.com/CavemanJay/gogurt/server"
 	"github.com/op/go-logging"
 
 	"github.com/urfave/cli/v2"
 )
 
-type ServerOptions struct {
-	Recursive bool
-}
-
-type ClientOptions struct {
-	Host string
-}
-
-type Config struct {
-	Port          int
-	ServerOptions ServerOptions
-	ClientOptions ClientOptions
-	AppDataFolder string
-	SyncFolder    string
-	Append        string
-}
-
-var Configuration = Config{}
+var Configuration = config.Config{}
 
 func getAppDataPath() string {
 	appData, err := os.UserCacheDir()
@@ -110,7 +94,14 @@ func InitApp() *cli.App {
 			Name:        "recursive",
 			Aliases:     []string{"r"},
 			Usage:       "Whether or not to recursively watch the root folder",
-			Destination: &Configuration.ServerOptions.Recursive,
+			Destination: &Configuration.Recursive,
+			Value:       true,
+		},
+		&cli.BoolFlag{
+			Name:        "use-last-run",
+			Aliases:     []string{"u"},
+			Usage:       "Use the options specified in the last run",
+			Destination: &Configuration.ServerOptions.UseLastRun,
 		},
 	}
 
@@ -127,34 +118,14 @@ func InitApp() *cli.App {
 					Value:       8081,
 					Destination: &Configuration.Port,
 				},
+				&cli.PathFlag{
+					Name:        "use-config",
+					Aliases:     []string{"c"},
+					Usage:       "The `FILE` to read config values from",
+					Destination: &Configuration.ServerOptions.ConfigPath,
+				},
 			},
-			Action: func(c *cli.Context) error {
-				cfg := &Configuration
-				_, err := os.Stat(cfg.SyncFolder)
-				if err != nil {
-					if os.IsNotExist(err) {
-						return fmt.Errorf("Folder \"%s\" does not exist", cfg.SyncFolder)
-					}
-					return err
-				}
-
-				os.Mkdir(cfg.AppDataFolder, os.ModePerm)
-
-				logFile, err := os.OpenFile(path.Join(cfg.AppDataFolder, "gogurt.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-				if err != nil {
-					return err
-				}
-				defer logFile.Close()
-				initLogger(logFile)
-
-				if cfg.Append != "" {
-					cfg.SyncFolder = path.Join(cfg.SyncFolder, cfg.Append)
-				}
-
-				s := server.NewServer(cfg.SyncFolder, cfg.ServerOptions.Recursive, cfg.Port)
-
-				return s.Listen()
-			},
+			Action: listen,
 		},
 		{
 			Name:    "dial",
@@ -175,15 +146,79 @@ func InitApp() *cli.App {
 					Value:       "localhost",
 				},
 			},
-			Action: func(ctx *cli.Context) error {
-				cfg := &Configuration
-				c := client.NewClient(cfg.SyncFolder)
-				initLogger(nil)
-
-				return c.Connect(cfg.ClientOptions.Host, cfg.Port)
-			},
+			Action: dial,
 		},
 	}
 
 	return app
+}
+
+func listen(ctx *cli.Context) error {
+	cfg := &Configuration
+
+	if err := handleConfig(); err != nil {
+		return err
+	}
+
+	_, err := os.Stat(cfg.SyncFolder)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("Folder \"%s\" does not exist", cfg.SyncFolder)
+		}
+		return err
+	}
+
+	os.Mkdir(cfg.AppDataFolder, os.ModePerm)
+
+	logFile, err := os.OpenFile(path.Join(cfg.AppDataFolder, "gogurt.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		return err
+	}
+	defer logFile.Close()
+	initLogger(logFile)
+
+	if cfg.Append != "" {
+		cfg.SyncFolder = path.Join(cfg.SyncFolder, cfg.Append)
+	}
+
+	config.WriteConfig(path.Join(cfg.AppDataFolder, "last_run.json"), cfg)
+
+	s := server.NewServer(cfg.SyncFolder, cfg.Recursive, cfg.Port)
+
+	return s.Listen()
+}
+
+func dial(ctx *cli.Context) error {
+
+	cfg := &Configuration
+
+	if err := handleConfig(); err != nil {
+		return err
+	}
+
+	c := client.NewClient(cfg.SyncFolder)
+	initLogger(nil)
+
+	config.WriteConfig(path.Join(cfg.AppDataFolder, "last_run.json"), cfg)
+
+	return c.Connect(cfg.ClientOptions.Host, cfg.Port)
+}
+
+func handleConfig() error {
+	cfg := &Configuration
+	if cfg.ServerOptions.UseLastRun {
+		cfgFile := path.Join(getAppDataPath(), "last_run.json")
+		cfg, err := config.ReadConfig(cfgFile)
+		if err != nil {
+			return err
+		}
+		Configuration = *cfg
+	} else if len(cfg.ServerOptions.ConfigPath) > 0 {
+		cfg, err := config.ReadConfig(cfg.ServerOptions.ConfigPath)
+		if err != nil {
+			return err
+		}
+		Configuration = *cfg
+	}
+	return nil
 }
