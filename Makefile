@@ -31,12 +31,11 @@ all:
 	GOOS=windows $(buildCmd) -o $(winOut)
 	GOOS=linux $(buildCmd) -o $(linuxOut)
 
-
 clean:
 	rm -rvf $(rootOut) build data $(releasePath)/*
 
 install:
-	go install .
+	$(buildCmd) -ldflags="$(buildFlags) $(releaseFlags)" -o $(GOPATH)/bin
 
 uninstall:
 	rm -rvf "${GOPATH}/bin/$(appName)"
