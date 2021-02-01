@@ -27,6 +27,9 @@ help: compile
 dial: compile
 	./$(linuxOut) dial
 
+archive: compile
+	./$(linuxOut) archive 
+
 all: 
 	GOOS=windows $(buildCmd) -o $(winOut)
 	GOOS=linux $(buildCmd) -o $(linuxOut)
