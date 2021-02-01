@@ -36,7 +36,7 @@ func initLogger(file io.Writer) {
 
 	// format := logging.MustStringFormatter(`%{color}%{time:15:04:05.000} %{callpath} ▶ %{level:2.5s} %{id:03x}%{color:reset} %{message}`)
 
-	stdOutBackend := logging.NewLogBackend(os.Stdin, "", 0)
+	stdOutBackend := logging.NewLogBackend(os.Stdout, "", 0)
 	stdOut := logging.AddModuleLevel(logging.NewBackendFormatter(stdOutBackend, format))
 	stdOut.SetLevel(logging.DEBUG, "gogurt")
 
