@@ -8,6 +8,7 @@ import (
 	"os/user"
 	"path"
 
+	"github.com/CavemanJay/gogurt/archive"
 	"github.com/CavemanJay/gogurt/client"
 	"github.com/CavemanJay/gogurt/config"
 	"github.com/CavemanJay/gogurt/server"
@@ -151,9 +152,7 @@ func InitApp(version string) *cli.App {
 		{
 			Name:    "archive",
 			Aliases: []string{"a"},
-			// Usage:   "Archives",
-			Flags:  []cli.Flag{},
-			Action: archive,
+			Action:  archiveAction,
 		},
 	}
 
@@ -188,7 +187,7 @@ func listen(ctx *cli.Context) error {
 		cfg.SyncFolder = path.Join(cfg.SyncFolder, cfg.Append)
 	}
 
-	config.WriteConfig(path.Join(cfg.AppDataFolder, "last_run.json"), cfg)
+	writeConfig(cfg)
 
 	s := server.NewServer(cfg.SyncFolder, cfg.Recursive, cfg.Port)
 
@@ -196,7 +195,6 @@ func listen(ctx *cli.Context) error {
 }
 
 func dial(ctx *cli.Context) error {
-
 	cfg := &configuration
 
 	if err := handleConfig(); err != nil {
@@ -206,7 +204,7 @@ func dial(ctx *cli.Context) error {
 	c := client.NewClient(cfg.SyncFolder)
 	initLogger(nil)
 
-	config.WriteConfig(path.Join(cfg.AppDataFolder, "last_run.json"), cfg)
+	writeConfig(cfg)
 
 	return c.Connect(cfg.ClientOptions.Host, cfg.Port)
 }
@@ -230,14 +228,20 @@ func handleConfig() error {
 	return nil
 }
 
-func archive(ctx *cli.Context) error {
+func archiveAction(ctx *cli.Context) error {
 	cfg := &configuration
 	if err := handleConfig(); err != nil {
 		return err
 	}
 	initLogger(nil)
 
-	log.Printf("%#v", cfg)
+	writeConfig(cfg)
 
-	return nil
+	archiver := archive.NewArchiver(cfg.ArchiveOptions)
+
+	return archiver.Archive()
+}
+
+func writeConfig(cfg *config.Config) {
+	config.WriteConfig(path.Join(cfg.AppDataFolder, "last_run.json"), cfg)
 }
