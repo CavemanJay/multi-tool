@@ -14,12 +14,12 @@ import (
 var log = logging.MustGetLogger("gogurt")
 
 type FileWatcher struct {
-	Root         string
-	Recursive    bool
-	FileCreated  func(file File) error
-	FilesDeleted func(files []string) error
-	Files        *[]File
-	watcher      *fsnotify.Watcher
+	Root        string
+	Recursive   bool
+	FileCreated func(file File) error
+	FileDeleted func(path string) error
+	Files       *[]File
+	watcher     *fsnotify.Watcher
 }
 
 func (fw *FileWatcher) Watch(exit <-chan struct{}) error {
@@ -37,35 +37,10 @@ func (fw *FileWatcher) Watch(exit <-chan struct{}) error {
 	}
 
 	go fw.listenForFsEvents()
-	go fw.checkForDeletedFiles()
 
 	<-exit
 
 	return nil
-}
-
-func findDeletedFiles(files []File) []string {
-	deleted := []string{}
-
-	for _, f := range files {
-		if _, err := os.Stat(f.Path); os.IsNotExist(err) {
-			deleted = append(deleted, f.Path)
-		}
-	}
-
-	return deleted
-}
-
-func (fw *FileWatcher) checkForDeletedFiles() {
-	ticker := time.NewTicker(5 * time.Second)
-	for {
-		<-ticker.C
-
-		deleted := findDeletedFiles(*fw.Files)
-		if len(deleted) > 0 {
-			fw.FilesDeleted(deleted)
-		}
-	}
 }
 
 func (fw *FileWatcher) listenForFsEvents() {
@@ -110,8 +85,10 @@ func (fw *FileWatcher) watchDir(path string, fi os.FileInfo, err error) error {
 func (fw *FileWatcher) handleEvents(e fsnotify.Event) {
 	fileInfo, err := os.Stat(e.Name)
 
-	// if the file does not exist
+	// if the file does not exist (file is deleted)
 	if os.IsNotExist(err) {
+		log.Debugf("File deleted: %s", e.Name)
+		fw.FileDeleted(getFilePathRelativeToRoot(fw.Root, e.Name))
 		return
 	}
 
@@ -119,12 +96,16 @@ func (fw *FileWatcher) handleEvents(e fsnotify.Event) {
 		panic(err)
 	}
 
-	// We only care about files
 	if fileInfo.IsDir() {
+		err := fw.watcher.Add(e.Name)
+		if err != nil {
+			log.Error(err)
+		}
 		return
 	}
 
 	if e.Op&fsnotify.Create == fsnotify.Create {
+		log.Debugf("File created: %s", e.Name)
 		fw.handleFileCreated(e)
 		return
 	}
