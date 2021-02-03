@@ -52,11 +52,11 @@ func NewServer(rootFolder string, recursive bool, port int) *Server {
 	}
 
 	server.fileWatcher = filesync.FileWatcher{
-		Root:         rootFolder,
-		Recursive:    recursive,
-		FileCreated:  server.fileCreatedHandler,
-		Files:        &server.filesList,
-		FilesDeleted: server.filesDeletedHandler,
+		Root:        rootFolder,
+		Recursive:   recursive,
+		FileCreated: server.fileCreatedHandler,
+		Files:       &server.filesList,
+		FileDeleted: server.fileDeletedHandler,
 	}
 
 	return server
@@ -139,8 +139,9 @@ func (s *Server) fileCreatedHandler(file filesync.File) error {
 	return nil
 }
 
-func (s *Server) filesDeletedHandler(paths []string) error {
-	s.db.Delete(paths)
+// TODO
+func (s *Server) fileDeletedHandler(path string) error {
+	// s.db.Delete(path)
 
 	return nil
 }
