@@ -21,6 +21,9 @@ listen-music: compile
 wsl: compile
 	./$(linuxOut) -f "/mnt/c/Users/cueva/Sync/" listen 
 
+music: compile
+	./$(linuxOut) m
+
 help: compile
 	./$(linuxOut) -h
 
@@ -47,3 +50,6 @@ release: clean
 	mkdir -p $(releasePath)
 	xgo -v -out='$(appName)-$(version)' -tags='release' -ldflags='$(releaseFlags) $(buildFlags)' -dest ./$(releasePath) --targets=windows/*,linux/amd64,linux/386 github.com/CavemanJay/$(appName)
 	# find ./ -name "*.go" -o -name "go.*" -o -name "*.yml" | tar -cvf $(releasePath)/$(appName)-$(version).tar.gz -T -
+
+docker: clean
+	docker build --build-arg VERSION=$(version) .
