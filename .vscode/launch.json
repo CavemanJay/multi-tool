@@ -18,7 +18,7 @@
       "request": "launch",
       "mode": "debug",
       "program": "${workspaceFolder}",
-      "args": ["m"]
+      "args": ["m", "-p", "Yuh"]
     }
   ]
 }
