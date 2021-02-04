@@ -38,7 +38,7 @@ all:
 	GOOS=linux $(buildCmd) -o $(linuxOut)
 
 clean:
-	rm -rvf $(rootOut) build data $(releasePath)/*
+	rm -rvf $(rootOut) build data $(releasePath)/* __debug_bin
 
 install:
 	$(buildCmd) -ldflags="$(buildFlags) $(releaseFlags)" -o $(GOPATH)/bin
