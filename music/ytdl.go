@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 )
 
 const template = "%(title)s.%(format)s"
@@ -32,7 +32,7 @@ func DownloadVideo(video Video, outputRoot string) error {
 		"--audio-format",
 		"mp3",
 		"-o",
-		path.Join(outputRoot, template), video.Link())
+		filepath.Join(outputRoot, template), video.Link())
 
 	// fmt.Println(cmd.String())
 	cmd.Stdout = os.Stdout

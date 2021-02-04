@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"path"
+	"path/filepath"
 
 	"github.com/urfave/cli/v2"
 )
@@ -56,7 +56,7 @@ var appCommands = []*cli.Command{
 			&cli.PathFlag{
 				Name:        "secret",
 				Aliases:     []string{"s"},
-				Value:       path.Join(getAppDataPath(), "client_secret.json"),
+				Value:       filepath.Join(getAppDataPath(), "client_secret.json"),
 				Usage:       "The `PATH` to the client secrets file provided by youtube api",
 				Destination: &configuration.MusicOptions.SecretsFile,
 			},

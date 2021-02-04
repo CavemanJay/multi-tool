@@ -4,7 +4,7 @@ import (
 	"io"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/CavemanJay/gogurt/config"
 	"github.com/CavemanJay/gogurt/music"
@@ -17,8 +17,7 @@ func getAppDataPath() string {
 	if err != nil {
 		panic(err)
 	}
-
-	return path.Join(appData, "gogurt")
+	return filepath.Join(appData, "gogurt")
 }
 
 func initLogger(file io.Writer) {
@@ -53,7 +52,7 @@ func initLogger(file io.Writer) {
 func handleConfig() error {
 	cfg := &configuration
 	if cfg.UseLastRun {
-		cfgFile := path.Join(getAppDataPath(), "last_run.json")
+		cfgFile := filepath.Join(getAppDataPath(), "last_run.json")
 		cfg, err := config.ReadConfig(cfgFile)
 		if err != nil {
 			return err
@@ -70,7 +69,7 @@ func handleConfig() error {
 }
 
 func writeConfig(cfg *config.Config) {
-	config.WriteConfig(path.Join(cfg.AppDataFolder, "last_run.json"), cfg)
+	config.WriteConfig(filepath.Join(cfg.AppDataFolder, "last_run.json"), cfg)
 }
 
 func getPlaylist(available *[]music.PlayList) string {

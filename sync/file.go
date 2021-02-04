@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 )
@@ -29,7 +28,7 @@ func (f File) ToDataFile(syncRoot string) (FileWithData, error) {
 }
 
 func (f File) getFileToSend(root string) (*FileWithData, error) {
-	encoded, err := getBase64FileData(path.Join(root, f.Path))
+	encoded, err := getBase64FileData(filepath.Join(root, f.Path))
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +101,7 @@ func getFilePathRelativeToRoot(root string, fullPath string) string {
 	path := strings.ReplaceAll(fullPath, root, "")
 	path = strings.ReplaceAll(path, "\\", "/")
 	if path[0] == '/' {
-		path = path[1:len(path)]
+		path = path[1:]
 	}
 
 	return path

@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/CavemanJay/gogurt/archive"
 	"github.com/CavemanJay/gogurt/client"
@@ -29,7 +29,7 @@ func listen(ctx *cli.Context) error {
 
 	os.Mkdir(cfg.AppDataFolder, os.ModePerm)
 
-	logFile, err := os.OpenFile(path.Join(cfg.AppDataFolder, "gogurt.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	logFile, err := os.OpenFile(filepath.Join(cfg.AppDataFolder, "gogurt.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		return err
 	}
@@ -37,7 +37,7 @@ func listen(ctx *cli.Context) error {
 	initLogger(logFile)
 
 	if cfg.Append != "" {
-		cfg.SyncFolder = path.Join(cfg.SyncFolder, cfg.Append)
+		cfg.SyncFolder = filepath.Join(cfg.SyncFolder, cfg.Append)
 	}
 
 	writeConfig(cfg)
@@ -113,20 +113,20 @@ func syncMusic(ctx *cli.Context) error {
 	}
 
 	videos := client.Videos(chosenPlaylist)
-	syncPath := path.Join(cfg.SyncFolder, chosenPlaylist.Name)
+	syncPath := filepath.Join(cfg.SyncFolder, chosenPlaylist.Name)
 
 	toDownload := []*music.Video{}
 
 	for _, video := range videos {
 		fileName := fmt.Sprintf("%s.mp3", video.Title)
-		_, err := os.Stat(path.Join(syncPath, fileName))
+		_, err := os.Stat(filepath.Join(syncPath, fileName))
 		if err != nil && os.IsNotExist(err) {
 			toDownload = append(toDownload, &video)
 		}
 		err = nil
 	}
 
-	// err := music.DownloadVideo(videos[0], path.Join(cfg.SyncFolder, playlists[0].Name))
+	// err := music.DownloadVideo(videos[0], filepath.Join(cfg.SyncFolder, playlists[0].Name))
 	// if err != nil {
 	// 	log.Panic(err)
 	// }

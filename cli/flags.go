@@ -2,7 +2,7 @@ package cli
 
 import (
 	"os/user"
-	"path"
+	"path/filepath"
 
 	"github.com/urfave/cli/v2"
 )
@@ -30,7 +30,7 @@ func init() {
 			Name:        "folder",
 			Aliases:     []string{"f"},
 			Usage:       "The root `FOLDER` to synchronize",
-			Value:       path.Join(usr.HomeDir, "Sync"),
+			Value:       filepath.Join(usr.HomeDir, "Sync"),
 			Destination: &configuration.SyncFolder,
 		},
 		&cli.StringFlag{
