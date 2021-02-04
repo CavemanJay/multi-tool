@@ -21,17 +21,23 @@ type ArchiveOptions struct {
 	InFolders []string
 }
 
+type MusicOptions struct {
+	SecretsFile  string
+	PlaylistName string
+}
+
 type Config struct {
 	// ServerOptions  ServerOptions `json:"-"`
-	ClientOptions  ClientOptions
-	ArchiveOptions ArchiveOptions
-	UseLastRun     bool `json:"-"`
-	Recursive      bool
-	Port           int
-	AppDataFolder  string
-	SyncFolder     string
-	Append         string
-	ConfigPath     string
+	ClientOptions
+	ArchiveOptions
+	MusicOptions
+	UseLastRun    bool `json:"-"`
+	Recursive     bool
+	Port          int
+	AppDataFolder string
+	SyncFolder    string
+	Append        string
+	ConfigPath    string
 }
 
 func ReadConfig(path string) (*Config, error) {
