@@ -21,15 +21,11 @@ type YoutubeClient struct {
 	client *youtube.Service
 }
 
-type PlayList struct {
-	Name string
-	Link string
-}
-
-func NewYoutubeClient() *YoutubeClient {
+func NewYoutubeClient(secretsFile string) *YoutubeClient {
 	ctx := context.Background()
 
-	b, err := ioutil.ReadFile("client_secret.json")
+	// b, err := ioutil.ReadFile("client_secret.json")
+	b, err := ioutil.ReadFile(secretsFile)
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
 	}
@@ -142,8 +138,27 @@ func (yt YoutubeClient) Playlists() []PlayList {
 	playLists := []PlayList{}
 
 	for _, item := range response.Items {
-		playLists = append(playLists, PlayList{Name: item.Snippet.Title, Link: "https://youtube.com/playlist?list=" + item.Id})
+		playLists = append(playLists, PlayList{Name: item.Snippet.Title, ID: item.Id})
 	}
 
 	return playLists
+}
+
+func (yt YoutubeClient) Videos(playlist *PlayList) []Video {
+	call := yt.client.PlaylistItems.List([]string{"snippet,contentDetails"}).PlaylistId(playlist.ID).MaxResults(10000)
+
+	videos := []Video{}
+
+	err := call.Pages(context.Background(), func(r *youtube.PlaylistItemListResponse) error {
+
+		for _, item := range r.Items {
+			video := Video{ID: item.ContentDetails.VideoId, Title: item.Snippet.Title}
+			videos = append(videos, video)
+		}
+
+		return nil
+	})
+	handleError(err, "")
+
+	return videos
 }

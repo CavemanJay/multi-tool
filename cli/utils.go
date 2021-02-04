@@ -7,6 +7,8 @@ import (
 	"path"
 
 	"github.com/CavemanJay/gogurt/config"
+	"github.com/CavemanJay/gogurt/music"
+	"github.com/c-bata/go-prompt"
 	"github.com/op/go-logging"
 )
 
@@ -69,4 +71,21 @@ func handleConfig() error {
 
 func writeConfig(cfg *config.Config) {
 	config.WriteConfig(path.Join(cfg.AppDataFolder, "last_run.json"), cfg)
+}
+
+func getPlaylist(available *[]music.PlayList) string {
+	completer := func(d prompt.Document) []prompt.Suggest {
+		suggestions := []prompt.Suggest{}
+
+		for _, pl := range *available {
+			suggestions = append(suggestions, prompt.Suggest{
+				Text: pl.Name,
+			})
+		}
+		suggestions = append(suggestions, prompt.Suggest{Text: "quit"})
+
+		return prompt.FilterHasPrefix(suggestions, d.GetWordBeforeCursor(), true)
+	}
+
+	return prompt.Input("Which playlist would you like to synchronize: ", completer)
 }

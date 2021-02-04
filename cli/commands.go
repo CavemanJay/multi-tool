@@ -1,6 +1,10 @@
 package cli
 
-import "github.com/urfave/cli/v2"
+import (
+	"path"
+
+	"github.com/urfave/cli/v2"
+)
 
 var appCommands = []*cli.Command{
 	{
@@ -48,5 +52,20 @@ var appCommands = []*cli.Command{
 		Name:    "sync-music",
 		Aliases: []string{"m"},
 		Action:  syncMusic,
+		Flags: []cli.Flag{
+			&cli.PathFlag{
+				Name:        "secret",
+				Aliases:     []string{"s"},
+				Value:       path.Join(getAppDataPath(), "client_secret.json"),
+				Usage:       "The `PATH` to the client secrets file provided by youtube api",
+				Destination: &configuration.MusicOptions.SecretsFile,
+			},
+			&cli.StringFlag{
+				Name:        "playlist",
+				Aliases:     []string{"p"},
+				Usage:       "The name of the playlist to download. Will ask if not provided",
+				Destination: &configuration.MusicOptions.PlaylistName,
+			},
+		},
 	},
 }

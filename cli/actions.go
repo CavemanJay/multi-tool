@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path"
@@ -78,13 +77,59 @@ func archiveAction(ctx *cli.Context) error {
 }
 
 func syncMusic(ctx *cli.Context) error {
-	client := music.NewYoutubeClient()
+	cfg := &configuration
+	if err := handleConfig(); err != nil {
+		return err
+	}
 
+	// initLogger(nil)
+	writeConfig(cfg)
+
+	client := music.NewYoutubeClient(cfg.MusicOptions.SecretsFile)
 	playlists := client.Playlists()
+	var chosenPlaylist *music.PlayList
 
-	data, _ := json.Marshal(playlists)
+	chosen := cfg.MusicOptions.PlaylistName
 
-	fmt.Printf("%s", data)
+	// Playlist not specified. Ask what playlist the user wants to download
+	if len(chosen) <= 0 {
+		chosen = getPlaylist(&playlists)
+	}
+
+	if chosen == "quit" {
+		os.Exit(0)
+	}
+
+	for _, pl := range playlists {
+		if pl.Name == chosen {
+			chosenPlaylist = &pl
+			break
+		}
+	}
+
+	// If the playlist wasn't found
+	if chosenPlaylist == nil {
+		return fmt.Errorf("Playlist '%s' does not exist", chosen)
+	}
+
+	videos := client.Videos(chosenPlaylist)
+	syncPath := path.Join(cfg.SyncFolder, chosenPlaylist.Name)
+
+	toDownload := []*music.Video{}
+
+	for _, video := range videos {
+		fileName := fmt.Sprintf("%s.mp3", video.Title)
+		_, err := os.Stat(path.Join(syncPath, fileName))
+		if err != nil && os.IsNotExist(err) {
+			toDownload = append(toDownload, &video)
+		}
+		err = nil
+	}
+
+	// err := music.DownloadVideo(videos[0], path.Join(cfg.SyncFolder, playlists[0].Name))
+	// if err != nil {
+	// 	log.Panic(err)
+	// }
 
 	return nil
 }

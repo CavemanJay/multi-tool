@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	cloud.google.com/go v0.76.0 // indirect
+	github.com/c-bata/go-prompt v0.2.5
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/gorilla/websocket v1.4.2

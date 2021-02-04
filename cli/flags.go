@@ -53,7 +53,7 @@ func init() {
 			Destination: &configuration.UseLastRun,
 		},
 		&cli.PathFlag{
-			Name:        "use-config",
+			Name:        "config",
 			Aliases:     []string{"c"},
 			Usage:       "The `FILE` to read config values from",
 			Destination: &configuration.ConfigPath,
