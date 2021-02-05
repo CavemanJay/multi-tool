@@ -2,7 +2,6 @@ package music
 
 import (
 	"fmt"
-	"log"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -13,11 +12,7 @@ const template = "%(title)s.%(format)s"
 var exePath string
 
 func init() {
-	var err error
-	exePath, err = exec.LookPath("youtube-dl")
-	if err != nil {
-		log.Panic("youtube-dl executable not found")
-	}
+	exePath, _ = exec.LookPath("youtube-dl")
 }
 
 // func quote(str string) string {
