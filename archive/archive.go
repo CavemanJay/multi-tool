@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -44,9 +44,9 @@ func (a Archiver) Archive() error {
 		var archivePath string
 		if pattern.MatchString(folder) {
 			archiveName := strings.Replace(folder, "Demos", "RL Replays", 1)
-			archivePath = path.Join(a.options.OutFolder, path.Base(archiveName))
+			archivePath = filepath.Join(a.options.OutFolder, filepath.Base(archiveName))
 		} else {
-			archivePath = path.Join(a.options.OutFolder, path.Base(folder))
+			archivePath = filepath.Join(a.options.OutFolder, filepath.Base(folder))
 		}
 
 		cmd := exec.Command(exePath, "u", archivePath, folder)

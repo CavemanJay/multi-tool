@@ -24,6 +24,7 @@ type ArchiveOptions struct {
 type MusicOptions struct {
 	SecretsFile  string
 	PlaylistName string
+	Limit        int
 }
 
 type Config struct {

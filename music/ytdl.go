@@ -1,10 +1,11 @@
 package music
 
 import (
+	"fmt"
 	"log"
-	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 const template = "%(title)s.%(format)s"
@@ -23,7 +24,19 @@ func init() {
 // 	return fmt.Sprintf("'%s'", str)
 // }
 
-func DownloadVideo(video Video, outputRoot string) error {
+func GetFileName(video *Video) string {
+	fileName := strings.ReplaceAll(video.Title, "/", "_")
+	fileName = strings.ReplaceAll(fileName, "**OUT ON SPOTIFY**", "_OUT ON SPOTIFY")
+	fileName = strings.ReplaceAll(fileName, "|", "_")
+	// re := regexp.MustCompile(`\**$`)
+	// fileName = re.ReplaceAllString(fileName, "")
+	fileName = strings.ReplaceAll(fileName, "*", "_")
+
+	fileName = fmt.Sprintf("%s.mp3", fileName)
+	return fileName
+}
+
+func DownloadVideo(video *Video, outputRoot string) error {
 	cmd := exec.Command(
 		exePath,
 		"--ignore-config",
@@ -31,12 +44,14 @@ func DownloadVideo(video Video, outputRoot string) error {
 		"--extract-audio",
 		"--audio-format",
 		"mp3",
+		"--audio-quality",
+		"9",
 		"-o",
 		filepath.Join(outputRoot, template), video.Link())
 
-	// fmt.Println(cmd.String())
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	fmt.Printf("Downloading track: %s\n", video.Title)
+	// cmd.Stdout = os.Stdout
+	// cmd.Stderr = os.Stderr
 
 	return cmd.Run()
 }

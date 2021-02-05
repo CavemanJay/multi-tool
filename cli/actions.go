@@ -2,8 +2,10 @@ package cli
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/CavemanJay/gogurt/archive"
 	"github.com/CavemanJay/gogurt/client"
@@ -113,23 +115,41 @@ func syncMusic(ctx *cli.Context) error {
 	}
 
 	videos := client.Videos(chosenPlaylist)
-	syncPath := filepath.Join(cfg.SyncFolder, chosenPlaylist.Name)
+	syncPath := filepath.Join(cfg.SyncFolder, "Music", chosenPlaylist.Name)
 
 	toDownload := []*music.Video{}
 
-	for _, video := range videos {
-		fileName := fmt.Sprintf("%s.mp3", video.Title)
-		_, err := os.Stat(filepath.Join(syncPath, fileName))
+	var limit int
+	if cfg.MusicOptions.Limit == 0 {
+		limit = len(videos)
+	} else if cfg.MusicOptions.Limit >= len(videos) {
+		limit = len(videos)
+	} else {
+		limit = cfg.MusicOptions.Limit
+	}
+
+	// TODO: Optimize
+	count := 0
+	for i := 0; count < limit && i < len(videos); i++ {
+		fileName := music.GetFileName(&videos[i])
+		toCheck := filepath.Join(syncPath, fileName)
+		_, err := os.Stat(toCheck)
 		if err != nil && os.IsNotExist(err) {
-			toDownload = append(toDownload, &video)
+			toDownload = append(toDownload, &videos[i])
+			count++
 		}
 		err = nil
 	}
 
-	// err := music.DownloadVideo(videos[0], filepath.Join(cfg.SyncFolder, playlists[0].Name))
-	// if err != nil {
-	// 	log.Panic(err)
-	// }
+	for _, v := range toDownload {
+		delay := rand.Intn(4-1) + 1
+		err := music.DownloadVideo(v, syncPath)
+		if err != nil {
+			return err
+		}
+
+		time.Sleep(time.Duration(delay) * time.Second)
+	}
 
 	return nil
 }

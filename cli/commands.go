@@ -66,6 +66,11 @@ var appCommands = []*cli.Command{
 				Usage:       "The name of the playlist to download. Will ask if not provided",
 				Destination: &configuration.MusicOptions.PlaylistName,
 			},
+			&cli.IntFlag{
+				Name:        "limit",
+				Aliases:     []string{"l"},
+				Destination: &configuration.MusicOptions.Limit,
+			},
 		},
 	},
 }
