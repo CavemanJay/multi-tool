@@ -39,8 +39,6 @@ func DownloadVideo(video *Video, outputRoot string) error {
 		"--extract-audio",
 		"--audio-format",
 		"mp3",
-		"--audio-quality",
-		"9",
 		"-o",
 		filepath.Join(outputRoot, template), video.Link())
 
