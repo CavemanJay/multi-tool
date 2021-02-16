@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/CavemanJay/gogurt/config"
-	"github.com/CavemanJay/gogurt/music"
+	"github.com/CavemanJay/multi-tool/config"
+	"github.com/CavemanJay/multi-tool/music"
 	"github.com/c-bata/go-prompt"
 	"github.com/op/go-logging"
 )
@@ -17,7 +17,7 @@ func getAppDataPath() string {
 	if err != nil {
 		panic(err)
 	}
-	return filepath.Join(appData, "gogurt")
+	return filepath.Join(appData, "multi-tool")
 }
 
 func initLogger(file io.Writer) {
@@ -30,7 +30,7 @@ func initLogger(file io.Writer) {
 
 	stdOutBackend := logging.NewLogBackend(os.Stdout, "", 0)
 	stdOut := logging.AddModuleLevel(logging.NewBackendFormatter(stdOutBackend, format))
-	stdOut.SetLevel(logging.DEBUG, "gogurt")
+	stdOut.SetLevel(logging.DEBUG, "multi-tool")
 
 	// If we are in a tty
 	// if fileInfo, _ := os.Stdout.Stat(); (fileInfo.Mode() & os.ModeCharDevice) != 0 {
@@ -42,7 +42,7 @@ func initLogger(file io.Writer) {
 
 	if file != nil {
 		logFile := logging.AddModuleLevel(logging.NewLogBackend(file, "", log.Lshortfile|log.Ldate|log.Ltime))
-		logFile.SetLevel(logging.INFO, "gogurt")
+		logFile.SetLevel(logging.INFO, "multi-tool")
 		logging.SetBackend(logFile, stdOut)
 	} else {
 		logging.SetBackend(stdOut)

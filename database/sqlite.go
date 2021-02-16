@@ -8,7 +8,7 @@ import (
 )
 
 func NewManager() (*Manager, error) {
-	db, err := gorm.Open(sqlite.Open("./data/gogurt.db?mode=rwc"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open("./data/multi-tool.db?mode=rwc"), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}

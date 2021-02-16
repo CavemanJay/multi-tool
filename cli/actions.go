@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/CavemanJay/gogurt/archive"
-	"github.com/CavemanJay/gogurt/client"
-	"github.com/CavemanJay/gogurt/music"
-	"github.com/CavemanJay/gogurt/server"
+	"github.com/CavemanJay/multi-tool/archive"
+	"github.com/CavemanJay/multi-tool/client"
+	"github.com/CavemanJay/multi-tool/music"
+	"github.com/CavemanJay/multi-tool/server"
 	"github.com/urfave/cli/v2"
 )
 
@@ -31,7 +31,7 @@ func listen(ctx *cli.Context) error {
 
 	os.Mkdir(cfg.AppDataFolder, os.ModePerm)
 
-	logFile, err := os.OpenFile(filepath.Join(cfg.AppDataFolder, "gogurt.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	logFile, err := os.OpenFile(filepath.Join(cfg.AppDataFolder, "multi-tool.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		return err
 	}

@@ -7,7 +7,7 @@ import (
 	"github.com/op/go-logging"
 )
 
-var log = logging.MustGetLogger("gogurt")
+var log = logging.MustGetLogger("multi-tool")
 
 type ServerOptions struct {
 }

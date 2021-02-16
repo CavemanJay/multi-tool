@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"net/url"
 
-	comms "github.com/CavemanJay/gogurt/communications"
-	"github.com/CavemanJay/gogurt/sync"
+	comms "github.com/CavemanJay/multi-tool/communications"
+	"github.com/CavemanJay/multi-tool/sync"
 	"github.com/gorilla/websocket"
 	"github.com/op/go-logging"
 )
 
-var log = logging.MustGetLogger("gogurt")
+var log = logging.MustGetLogger("multi-tool")
 
 type Client struct {
 	communicator *comms.Communicator

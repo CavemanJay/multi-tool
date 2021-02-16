@@ -1,12 +1,12 @@
 package database
 
 import (
-	"github.com/CavemanJay/gogurt/sync"
+	"github.com/CavemanJay/multi-tool/sync"
 	"github.com/op/go-logging"
 	"gorm.io/gorm"
 )
 
-var log = logging.MustGetLogger("gogurt")
+var log = logging.MustGetLogger("multi-tool")
 
 type file struct {
 	gorm.Model

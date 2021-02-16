@@ -11,7 +11,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-var log = logging.MustGetLogger("gogurt")
+var log = logging.MustGetLogger("multi-tool")
 
 type FileWatcher struct {
 	Root        string

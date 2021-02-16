@@ -1,19 +1,19 @@
 # Maintainer: Jay C <cuevas0212@gmail.com>
-pkgname="gogurt"
+pkgname="multitool"
 pkgver=r54.03c1e7e
 pkgrel=1
 pkgdesc="A cli app for common things I do"
 arch=('i686' 'pentium4' 'x86_64' 'arm' 'armv6h' 'armv7h' 'aarch64')
-url="https://github.com/CavemanJay/gogurt"
+url="https://github.com/CavemanJay/multi-tool"
 license=('GPL')
 depends=()
 makedepends=('go' 'git')
 optdepends=('ffmpeg: For converting yt videos to audio'
             'p7zip: For archiving purposes'
             'youtube-dl: For downloading yt videos')
-conflicts=('gogurt')
-provides=('gogurt')
-source=("gogurt::git+https://github.com/CavemanJay/gogurt.git")
+conflicts=('multi')
+provides=('multi')
+source=("multitool::git+https://github.com/CavemanJay/multi-tool.git")
 sha256sums=("SKIP")
 
 pkgver() {
@@ -36,5 +36,5 @@ build() {
 
 package() {
   cd "$pkgname"
-  install -Dm755 ./build/gogurt "$pkgdir/usr/bin/gogurt"
+  install -Dm755 ./build/multi "$pkgdir/usr/bin/multi"
 }

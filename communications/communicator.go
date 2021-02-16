@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/CavemanJay/gogurt/sync"
+	"github.com/CavemanJay/multi-tool/sync"
 	"github.com/gorilla/websocket"
 	"github.com/op/go-logging"
 )
 
-var log = logging.MustGetLogger("gogurt")
+var log = logging.MustGetLogger("multi-tool")
 
 type Communicator struct {
 	conn         *websocket.Conn

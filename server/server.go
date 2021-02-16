@@ -6,16 +6,16 @@ import (
 	"net/http"
 	"sync"
 
-	comms "github.com/CavemanJay/gogurt/communications"
-	"github.com/CavemanJay/gogurt/database"
-	filesync "github.com/CavemanJay/gogurt/sync"
+	comms "github.com/CavemanJay/multi-tool/communications"
+	"github.com/CavemanJay/multi-tool/database"
+	filesync "github.com/CavemanJay/multi-tool/sync"
 	"github.com/gorilla/websocket"
 	"github.com/op/go-logging"
 )
 
 var (
 	lock sync.Mutex
-	log  = logging.MustGetLogger("gogurt")
+	log  = logging.MustGetLogger("multi-tool")
 )
 
 type Server struct {

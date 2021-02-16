@@ -3,7 +3,7 @@ package communications
 import (
 	"encoding/json"
 
-	"github.com/CavemanJay/gogurt/sync"
+	"github.com/CavemanJay/multi-tool/sync"
 )
 
 type eventId int

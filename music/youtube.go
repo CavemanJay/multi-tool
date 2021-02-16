@@ -31,7 +31,7 @@ func NewYoutubeClient(secretsFile string) *YoutubeClient {
 	}
 
 	// If modifying these scopes, delete your previously saved credentials
-	// at ~/.credentials/gogurt.json
+	// at ~/.credentials/multi-tool.json
 	config, err := google.ConfigFromJSON(b, youtube.YoutubeReadonlyScope)
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
@@ -92,7 +92,7 @@ func tokenCacheFile() (string, error) {
 	tokenCacheDir := filepath.Join(usr.HomeDir, ".credentials")
 	os.MkdirAll(tokenCacheDir, 0700)
 	return filepath.Join(tokenCacheDir,
-		url.QueryEscape("gogurt.json")), err
+		url.QueryEscape("multi-tool.json")), err
 }
 
 // tokenFromFile retrieves a Token from a given file path.

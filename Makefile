@@ -1,5 +1,5 @@
 
-appName=gogurt
+appName=multi
 rootOut = build
 linuxOut = $(rootOut)/$(appName)
 winOut = $(rootOut)/$(appName).exe

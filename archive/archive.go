@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/CavemanJay/gogurt/config"
+	"github.com/CavemanJay/multi-tool/config"
 )
 
 type Archiver struct {

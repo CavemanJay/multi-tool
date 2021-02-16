@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/CavemanJay/gogurt/cli"
+	"github.com/CavemanJay/multi-tool/cli"
 )
 
 var (
