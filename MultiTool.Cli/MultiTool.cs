@@ -1,9 +1,13 @@
-﻿namespace MultiTool.Cli
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using CliFx;
+
+namespace MultiTool.Cli
 {
     public class MultiTool
     {
-        public static void Main(string[] args)
-        {
-        }
+        static async Task<int> Main() =>
+            await new CliApplicationBuilder().AddCommandsFromThisAssembly()
+                .UseExecutableName("multi").Build().RunAsync();
     }
 }
