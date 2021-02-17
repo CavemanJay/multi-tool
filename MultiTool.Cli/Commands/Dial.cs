@@ -11,7 +11,7 @@ namespace MultiTool.Cli.Commands
         public int Port { get; set; } = 8081;
 
         [CommandParameter(0, Description = "The host to connect to.")]
-        public string Host { get; set; }
+        public string Host { get; set; } = default!;
 
         public ValueTask ExecuteAsync(IConsole console)
         {

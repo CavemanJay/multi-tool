@@ -4,4 +4,27 @@
         <TargetFramework>net5.0</TargetFramework>
     </PropertyGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Google.Apis.Auth" Version="1.50.0" />
+      <PackageReference Include="Google.Apis.YouTube.v3" Version="1.50.0.2232" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Include="Sync.fs" />
+      <Compile Include="Models.fs" />
+      <Compile Include="Youtube.fs" />
+      <Compile Include="Ytdl.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\MultiTool.Core\MultiTool.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\MultiTool.Ytdl\build\music">
+        <Link>Binaries\music</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
 </Project>

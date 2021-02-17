@@ -13,4 +13,11 @@
       <PackageReference Include="CliFx" Version="1.6.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\MultiTool.Archiving\MultiTool.Archiving.fsproj" />
+      <ProjectReference Include="..\MultiTool.Core\MultiTool.Core.csproj" />
+      <ProjectReference Include="..\MultiTool.Prompt\MultiTool.Prompt.csproj" />
+        <ProjectReference Include="..\MultiTool.MusicSync\MultiTool.MusicSync.fsproj" />
+    </ItemGroup>
+    
 </Project>
