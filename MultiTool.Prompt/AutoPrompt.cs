@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -222,21 +223,24 @@ namespace MultiTool.Prompt
         /// <param name="options">List of values. Eg {Mr, Mrs, Ms} can be passed if prompt is for salutation. User can switch between these values by pressing up/down arrow or type another value if edits are allowed</param>
         /// <param name="allowEdits">If set to false, keys for characters, backspace, delete will not work. Only Up down can be used to select the options</param>
         /// <returns>User entered string or one of the string in 'options' choosen by the user</returns>
-        public static string PromptForInput(string message, string[] options, bool allowEdits)
+        public static string PromptForInput(string message, IEnumerable<string> options,
+            bool allowEdits)
         {
-            int CurrentOptionDisplayedIndex = 0;
-            StringBuilder result = new StringBuilder(options[0]);
+            var opts = options.ToArray();
+
+            var CurrentOptionDisplayedIndex = 0;
+            var result = new StringBuilder(opts[0]);
 
             ConsoleKeyInfo KeyInfo;
 
-            Console.Write(message + options[0]);
+            Console.Write(message + opts[0]);
 
             KeyInfo = Console.ReadKey(true);
             while (KeyInfo.Key != ConsoleKey.Enter)
             {
-                if ((Char.IsLetterOrDigit(KeyInfo.KeyChar) || Char.IsSymbol(KeyInfo.KeyChar) ||
-                     Char.IsPunctuation(KeyInfo.KeyChar) || Char.IsPunctuation(KeyInfo.KeyChar) ||
-                     Char.IsWhiteSpace(KeyInfo.KeyChar)) && allowEdits)
+                if ((char.IsLetterOrDigit(KeyInfo.KeyChar) || char.IsSymbol(KeyInfo.KeyChar) ||
+                     char.IsPunctuation(KeyInfo.KeyChar) || char.IsPunctuation(KeyInfo.KeyChar) ||
+                     char.IsWhiteSpace(KeyInfo.KeyChar)) && allowEdits)
                 {
                     Console.Write(KeyInfo.KeyChar);
 
@@ -264,12 +268,12 @@ namespace MultiTool.Prompt
                         }
                         else
                         {
-                            CurrentOptionDisplayedIndex = options.Length - 1;
+                            CurrentOptionDisplayedIndex = opts.Length - 1;
                         }
                     }
                     else if (KeyInfo.Key == ConsoleKey.DownArrow)
                     {
-                        if (CurrentOptionDisplayedIndex < options.Length - 1)
+                        if (CurrentOptionDisplayedIndex < opts.Length - 1)
                         {
                             CurrentOptionDisplayedIndex++;
                         }
@@ -280,11 +284,11 @@ namespace MultiTool.Prompt
                     }
 
                     // Show the new option
-                    Console.Write(options[CurrentOptionDisplayedIndex]);
+                    Console.Write(opts[CurrentOptionDisplayedIndex]);
 
                     // Set new user input
                     result.Clear();
-                    result.Append(options[CurrentOptionDisplayedIndex]);
+                    result.Append(opts[CurrentOptionDisplayedIndex]);
                 }
 
                 KeyInfo = Console.ReadKey(true);
@@ -306,48 +310,50 @@ namespace MultiTool.Prompt
         /// <param name="message">Message that appears on the prompt. For eg, Enter Value:</param>
         /// <param name="options">Input options that the user can choose from using up-down arrow or type to get to</param>
         /// <returns>User entered string or one of the string in 'options' choosen by the user</returns>
-        public static string PromptForInput_Searchable(string message, string[] options)
+        public static string PromptForInput_Searchable(string message, IEnumerable<string> options)
         {
-            StringBuilder result = new StringBuilder(options[0]);
-            int CurrentOptionDisplayedIndex = 0;
+            var opts = options.ToArray();
+
+            StringBuilder result = new StringBuilder(opts[0]);
+            int currentOptionDisplayedIndex = 0;
 
             ConsoleKeyInfo KeyInfo;
 
-            Console.Write(message + options[0]);
+            Console.Write(message + opts[0]);
 
             KeyInfo = Console.ReadKey(true);
             while (KeyInfo.Key != ConsoleKey.Enter)
             {
-                if (Char.IsLetterOrDigit(KeyInfo.KeyChar) || Char.IsSymbol(KeyInfo.KeyChar) ||
-                    Char.IsPunctuation(KeyInfo.KeyChar) || Char.IsPunctuation(KeyInfo.KeyChar) ||
-                    Char.IsWhiteSpace(KeyInfo.KeyChar))
+                if (char.IsLetterOrDigit(KeyInfo.KeyChar) || char.IsSymbol(KeyInfo.KeyChar) ||
+                    char.IsPunctuation(KeyInfo.KeyChar) || char.IsPunctuation(KeyInfo.KeyChar) ||
+                    char.IsWhiteSpace(KeyInfo.KeyChar))
                 {
                     Console.Write(KeyInfo.KeyChar);
 
                     result.Append(KeyInfo.KeyChar);
 
                     // Performing Closest Search
-                    int foundIndex = -1;
-                    int OptionIndex = 0;
-                    foreach (string Option in options)
+                    var foundIndex = -1;
+                    var optionIndex = 0;
+                    foreach (var option in options)
                     {
-                        if (Option.ToLower().StartsWith(result.ToString().ToLower()))
+                        if (option.ToLower().StartsWith(result.ToString().ToLower()))
                         {
-                            foundIndex = OptionIndex;
+                            foundIndex = optionIndex;
 
                             // Erase displayed option and show new option
                             EraseInput(result.Length);
 
                             result.Clear();
-                            result.Append(options[foundIndex]);
-                            CurrentOptionDisplayedIndex = foundIndex;
+                            result.Append(opts[foundIndex]);
+                            currentOptionDisplayedIndex = foundIndex;
 
-                            Console.Write(options[CurrentOptionDisplayedIndex]);
+                            Console.Write(opts[currentOptionDisplayedIndex]);
 
                             break;
                         }
 
-                        OptionIndex++;
+                        optionIndex++;
                     }
 
                     // Closest search ends
@@ -373,25 +379,25 @@ namespace MultiTool.Prompt
                     // Display new option
                     if (KeyInfo.Key == ConsoleKey.UpArrow)
                     {
-                        if (CurrentOptionDisplayedIndex > 0)
-                            CurrentOptionDisplayedIndex--;
+                        if (currentOptionDisplayedIndex > 0)
+                            currentOptionDisplayedIndex--;
                         else
-                            CurrentOptionDisplayedIndex = options.Length - 1;
+                            currentOptionDisplayedIndex = opts.Length - 1;
                     }
                     else if (KeyInfo.Key == ConsoleKey.DownArrow)
                     {
-                        if (CurrentOptionDisplayedIndex < options.Length - 1)
-                            CurrentOptionDisplayedIndex++;
+                        if (currentOptionDisplayedIndex < opts.Length - 1)
+                            currentOptionDisplayedIndex++;
                         else
-                            CurrentOptionDisplayedIndex = 0;
+                            currentOptionDisplayedIndex = 0;
                     }
 
                     // Show new option
-                    Console.Write(options[CurrentOptionDisplayedIndex]);
+                    Console.Write(opts[currentOptionDisplayedIndex]);
 
                     // Set new user input
                     result.Clear();
-                    result.Append(options[CurrentOptionDisplayedIndex]);
+                    result.Append(opts[currentOptionDisplayedIndex]);
                 }
 
                 KeyInfo = Console.ReadKey(true);
