@@ -1,4 +1,0 @@
-- Figure out how to handle the syncronizing of the client and server
-- Figure out how to watch folders that get added after initial indexing
-- On first index of files, keep them in memory as well
-    - On subsequent runs, pull the files from the database and make sure they haven't been changed or deleted
